@@ -1567,6 +1567,7 @@ containing a value of this type.
         public static final int nav_2_titl=0x7f0b001b;
         public static final int nav_3_desc=0x7f0b001c;
         public static final int nav_3_titl=0x7f0b001d;
+        public static final int service_fail=0x7f0b001e;
     }
     public static final class style {
         public static final int AppTheme=0x7f0c0000;

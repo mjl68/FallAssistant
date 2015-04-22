@@ -31,10 +31,10 @@
 
     <!--
     Specifies the instrumentation test runner used to run the tests.
-    -->
+
     <instrumentation
             android:name="android.test.InstrumentationTestRunner"
             android:targetPackage="com.falldetect2015.android.fallassistant"
             android:label="com.falldetect2015.android.fallassistant" />
-
+    -->
 </manifest>

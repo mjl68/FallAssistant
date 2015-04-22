@@ -25,6 +25,7 @@ import android.widget.AdapterView;
 import android.widget.BaseAdapter;
 import android.widget.GridView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 /**
  * A simple launcher activity offering access to the individual samples in this project.
@@ -59,15 +60,22 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         if (position > 0) {
             startActivity(mSamples[position].intent);
         } else {
-            if (mSamplesSwitch == false) {
-                mSamples[0].titleResId = com.falldetect2015.android.fallassistant.R.string.nav_1a_titl;
-                mSamples[0].descriptionResId = com.falldetect2015.android.fallassistant.R.string.nav_1a_desc;
-                mSamplesSwitch = true;
-                mGridView.invalidateViews();
+            faController mySensorCtlr = new faController();
+            if (mySensorCtlr.getStatus() == false) {
+                mySensorCtlr.startMonitor();
+                if (mySensorCtlr.getStatus() == true) {
+                    mSamples[0].titleResId = com.falldetect2015.android.fallassistant.R.string.nav_1a_titl;
+                    mSamples[0].descriptionResId = com.falldetect2015.android.fallassistant.R.string.nav_1a_desc;
+                    //mSamplesSwitch = true;
+                    mGridView.invalidateViews();
+                } else {
+                    Toast.makeText(this, com.falldetect2015.android.fallassistant.R.string.service_fail, Toast.LENGTH_LONG).show();
+                }
             } else{
                 mSamples[0].titleResId = com.falldetect2015.android.fallassistant.R.string.nav_1_titl;
                 mSamples[0].descriptionResId = com.falldetect2015.android.fallassistant.R.string.nav_1_desc;
-                mSamplesSwitch = false;
+                //mSamplesSwitch = false;
+                mySensorCtlr.stopMonitor();
                 mGridView.invalidateViews();
             }
 

@@ -21,6 +21,7 @@
     </string-array>
     <string name="drawer_open">Open options navigation drawer</string>
     <string name="drawer_close">Close options navigation drawer</string>
+    <string name="service_fail">Sensor service failure, please restart the application</string>
     <string name="action_websearch">Web search</string>
     <string name="app_not_available">Sorry, there\'s no web browser available</string>
 </resources>

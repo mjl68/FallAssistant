@@ -214,7 +214,7 @@ public class NavigationDrawerActivity extends Activity implements OptionAdapter.
      * Fragment that appears in the "content_frame", shows an Option
      */
     public static class OptionsFragment extends Fragment {
-        public static final String ARG_OPTIONS_NUMBER = "options_number";
+        public static final String ARG_OPTIONS_NUMBER = "Options Number";
 
         public OptionsFragment() {
             // Empty constructor required for fragment subclasses
