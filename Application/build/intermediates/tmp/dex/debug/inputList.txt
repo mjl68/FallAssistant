@@ -1,0 +1,9 @@
+C:\code\projects\android\android-NavigationDrawer\Application\build\intermediates\classes\debug
+C:\code\projects\android\android-NavigationDrawer\Application\build\intermediates\pre-dexed\debug\internal_impl-21.0.2-08d75f6a2e32dd3fafb70a49088afc8b2bab1413.jar
+C:\code\projects\android\android-NavigationDrawer\Application\build\intermediates\pre-dexed\debug\support-annotations-21.0.2-467ecc00b102184a7570d8966a4c77067d1ff997.jar
+C:\code\projects\android\android-NavigationDrawer\Application\build\intermediates\pre-dexed\debug\classes-08b683c36f9d0a9b2b5a6c44267ffdce53c3434d.jar
+C:\code\projects\android\android-NavigationDrawer\Application\build\intermediates\pre-dexed\debug\classes-3ab11a2a605ed99c0bfa2490528fdf8b1d23559e.jar
+C:\code\projects\android\android-NavigationDrawer\Application\build\intermediates\pre-dexed\debug\internal_impl-21.0.2-89555df59068f5c5c6b1a3a427ef8051dd41d1bb.jar
+C:\code\projects\android\android-NavigationDrawer\Application\build\intermediates\pre-dexed\debug\classes-32f9d0ad5b5aaa710837b6379b6a973ace39f411.jar
+C:\code\projects\android\android-NavigationDrawer\Application\build\intermediates\pre-dexed\debug\classes-3ca2382e2b3443256e252f876377bfcbe497aff8.jar
+C:\code\projects\android\android-NavigationDrawer\Application\build\intermediates\pre-dexed\debug\classes-a016245567b12633b9e8205caa86a8e55d038cad.jar

@@ -1,0 +1,13 @@
+# Fall Assistant
+#
+---
+
+status:       PUBLISHED
+technologies: [Android]
+categories:   [UI]
+languages:    [Java]
+solutions:    [Mobile]
+github:       mjl68/fallassistant
+level:        BEGINNER
+icon:         Navigation DrawerSample/src/main/res/drawable-xxhdpi/ic_launcher.png
+license:      apache2
