@@ -40,11 +40,11 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         mSamplesSwitch = false;
         // Prepare list of samples in this dashboard.
         mSamples = new Sample[]{
-            new Sample(com.falldetect2015.android.fallassistant.R.string.navigationdraweractivity_1_title, com.falldetect2015.android.fallassistant.R.string.navigationdraweractivity_1_description,
+            new Sample(com.falldetect2015.android.fallassistant.R.string.nav_1_titl, com.falldetect2015.android.fallassistant.R.string.nav_1_desc,
                     NavigationDrawerActivity.class),
-            new Sample(com.falldetect2015.android.fallassistant.R.string.navigationdraweractivity_2_title, com.falldetect2015.android.fallassistant.R.string.navigationdraweractivity_2_description,
+            new Sample(com.falldetect2015.android.fallassistant.R.string.nav_2_titl, com.falldetect2015.android.fallassistant.R.string.nav_2_desc,
                     NavigationDrawerActivity.class),
-            new Sample(com.falldetect2015.android.fallassistant.R.string.navigationdraweractivity_3_title, com.falldetect2015.android.fallassistant.R.string.navigationdraweractivity_3_description,
+            new Sample(com.falldetect2015.android.fallassistant.R.string.nav_3_titl, com.falldetect2015.android.fallassistant.R.string.nav_3_desc,
                         NavigationDrawerActivity.class),
         };
 
@@ -60,13 +60,13 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
             startActivity(mSamples[position].intent);
         } else {
             if (mSamplesSwitch == false) {
-                mSamples[0].titleResId = com.falldetect2015.android.fallassistant.R.string.navigationdraweractivity_1_title_alt1;
-                mSamples[0].descriptionResId = com.falldetect2015.android.fallassistant.R.string.navigationdraweractivity_1_description_alt1;
+                mSamples[0].titleResId = com.falldetect2015.android.fallassistant.R.string.nav_1a_titl;
+                mSamples[0].descriptionResId = com.falldetect2015.android.fallassistant.R.string.nav_1a_desc;
                 mSamplesSwitch = true;
                 mGridView.invalidateViews();
             } else{
-                mSamples[0].titleResId = com.falldetect2015.android.fallassistant.R.string.navigationdraweractivity_1_title;
-                mSamples[0].descriptionResId = com.falldetect2015.android.fallassistant.R.string.navigationdraweractivity_1_description;
+                mSamples[0].titleResId = com.falldetect2015.android.fallassistant.R.string.nav_1_titl;
+                mSamples[0].descriptionResId = com.falldetect2015.android.fallassistant.R.string.nav_1_desc;
                 mSamplesSwitch = false;
                 mGridView.invalidateViews();
             }

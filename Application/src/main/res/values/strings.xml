@@ -18,7 +18,6 @@
     <string-array name="options_array">
         <item>Contact Options</item>
         <item>Sensor Options</item>
-        <item>UI Color Options</item>
     </string-array>
     <string name="drawer_open">Open options navigation drawer</string>
     <string name="drawer_close">Close options navigation drawer</string>

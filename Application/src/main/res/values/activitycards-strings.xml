@@ -16,12 +16,12 @@
 -->
 
 <resources>
-    <string name="navigationdraweractivity_1_title">Service Stopped</string>
-    <string name="navigationdraweractivity_1_description">Fall Detection is inactive.  Click here to start Fall Detection.</string>
-    <string name="navigationdraweractivity_1_title_alt1">Service Running</string>
-    <string name="navigationdraweractivity_1_description_alt1">Fall Detection is active.  Click here to stop Fall Detection.</string>
-    <string name="navigationdraweractivity_2_title">Options Menu</string>
-    <string name="navigationdraweractivity_2_description">Click here to view the screens to set the Contact, Sensor and UI options.</string>
-    <string name="navigationdraweractivity_3_title">Simulate Fall</string>
-    <string name="navigationdraweractivity_3_description">Click here to simulate a fall to ensure your communcation settings meet your needs.</string>
+    <string name="nav_1_titl">Service Stopped</string>
+    <string name="nav_1_desc">Fall Detection is inactive.  Click here to start Fall Detection.</string>
+    <string name="nav_1a_titl">Service Running</string>
+    <string name="nav_1a_desc">Fall Detection is ACTIVE!.  Click here to stop.</string>
+    <string name="nav_2_titl">Options Menu</string>
+    <string name="nav_2_desc">Click here to view the screens to set the Contact, Sensor and UI options.</string>
+    <string name="nav_3_titl">Simulate Fall</string>
+    <string name="nav_3_desc">Click here to verify communcation settings meet your needs.</string>
 </resources>

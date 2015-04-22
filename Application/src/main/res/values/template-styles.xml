@@ -36,14 +36,14 @@
 
 <style name="Widget.SampleMessage">
         <item name="android:textAppearance">?android:textAppearanceMedium</item>
-        <item name="android:lineSpacingMultiplier">1.1</item>
+        <item name="android:lineSpacingMultiplier">1</item>
         <item name="android:textColor">@color/black_54</item>
     </style>
 
     <style name="Widget.SampleDashboard.Grid" parent="Widget">
         <item name="android:stretchMode">columnWidth</item>
         <item name="android:columnWidth">200dp</item>
-        <item name="android:numColumns">auto_fit</item>
+        <item name="android:numColumns">1</item>
         <item name="android:drawSelectorOnTop">true</item>
         <item name="android:horizontalSpacing">0dp</item>
         <item name="android:verticalSpacing">0dp</item>

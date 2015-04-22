@@ -1559,14 +1559,14 @@ containing a value of this type.
         public static final int drawer_close=0x7f0b0013;
         public static final int drawer_open=0x7f0b0014;
         public static final int intro_message=0x7f0b0015;
-        public static final int navigationdraweractivity_1_description=0x7f0b0016;
-        public static final int navigationdraweractivity_1_description_alt1=0x7f0b0017;
-        public static final int navigationdraweractivity_1_title=0x7f0b0018;
-        public static final int navigationdraweractivity_1_title_alt1=0x7f0b0019;
-        public static final int navigationdraweractivity_2_description=0x7f0b001a;
-        public static final int navigationdraweractivity_2_title=0x7f0b001b;
-        public static final int navigationdraweractivity_3_description=0x7f0b001c;
-        public static final int navigationdraweractivity_3_title=0x7f0b001d;
+        public static final int nav_1_desc=0x7f0b0016;
+        public static final int nav_1_titl=0x7f0b0017;
+        public static final int nav_1a_desc=0x7f0b0018;
+        public static final int nav_1a_titl=0x7f0b0019;
+        public static final int nav_2_desc=0x7f0b001a;
+        public static final int nav_2_titl=0x7f0b001b;
+        public static final int nav_3_desc=0x7f0b001c;
+        public static final int nav_3_titl=0x7f0b001d;
     }
     public static final class style {
         public static final int AppTheme=0x7f0c0000;
