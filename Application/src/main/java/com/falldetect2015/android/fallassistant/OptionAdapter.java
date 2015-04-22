@@ -23,7 +23,7 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 /**
- * Adapter for the planet data used in our drawer menu,
+ * Adapter for the Options data used in our drawer menu,
  */
 public class OptionAdapter extends RecyclerView.Adapter<OptionAdapter.ViewHolder> {
     private String[] mDataset;
@@ -37,7 +37,7 @@ public class OptionAdapter extends RecyclerView.Adapter<OptionAdapter.ViewHolder
     }
 
     /**
-     * Custom viewholder for our planet views.
+     * Custom viewholder for our Options views.
      */
     public static class ViewHolder extends RecyclerView.ViewHolder {
         public final TextView mTextView;
