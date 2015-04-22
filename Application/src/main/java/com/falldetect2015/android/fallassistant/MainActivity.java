@@ -1,20 +1,27 @@
 /*
-* Copyright 2013 The Android Open Source Project
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ * Copyright (C) 2015 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * ========================================================================
+ * (View) MainActivity
+ * - Displays Home screen to users
+ * - Calls to faModel object to start/stop sensor service
+ * - <Todo>Calls to <Controller> object to perform actual "SMS / Email"
+ *
+ */
 
 package com.falldetect2015.android.fallassistant;
+
 
 import android.app.Activity;
 import android.content.Intent;
@@ -27,9 +34,6 @@ import android.widget.GridView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-/**
- * A simple launcher activity offering access to the individual samples in this project.
- */
 public class MainActivity extends Activity implements AdapterView.OnItemClickListener {
     private Sample[] mSamples;
     private GridView mGridView;
@@ -41,11 +45,11 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         mSamplesSwitch = false;
         // Prepare list of samples in this dashboard.
         mSamples = new Sample[]{
-            new Sample(com.falldetect2015.android.fallassistant.R.string.nav_1_titl, com.falldetect2015.android.fallassistant.R.string.nav_1_desc,
-                    NavigationDrawerActivity.class),
-            new Sample(com.falldetect2015.android.fallassistant.R.string.nav_2_titl, com.falldetect2015.android.fallassistant.R.string.nav_2_desc,
-                    NavigationDrawerActivity.class),
-            new Sample(com.falldetect2015.android.fallassistant.R.string.nav_3_titl, com.falldetect2015.android.fallassistant.R.string.nav_3_desc,
+                new Sample(com.falldetect2015.android.fallassistant.R.string.nav_1_titl, com.falldetect2015.android.fallassistant.R.string.nav_1_desc,
+                        NavigationDrawerActivity.class),
+                new Sample(com.falldetect2015.android.fallassistant.R.string.nav_2_titl, com.falldetect2015.android.fallassistant.R.string.nav_2_desc,
+                        NavigationDrawerActivity.class),
+                new Sample(com.falldetect2015.android.fallassistant.R.string.nav_3_titl, com.falldetect2015.android.fallassistant.R.string.nav_3_desc,
                         NavigationDrawerActivity.class),
         };
 
@@ -60,7 +64,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         if (position > 0) {
             startActivity(mSamples[position].intent);
         } else {
-            faController mySensorCtlr = new faController();
+            faModel mySensorCtlr = new faModel();
             if (mySensorCtlr.getStatus() == false) {
                 mySensorCtlr.startMonitor();
                 if (mySensorCtlr.getStatus() == true) {
@@ -71,7 +75,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
                 } else {
                     Toast.makeText(this, com.falldetect2015.android.fallassistant.R.string.service_fail, Toast.LENGTH_LONG).show();
                 }
-            } else{
+            } else {
                 mSamples[0].titleResId = com.falldetect2015.android.fallassistant.R.string.nav_1_titl;
                 mSamples[0].descriptionResId = com.falldetect2015.android.fallassistant.R.string.nav_1_desc;
                 //mSamplesSwitch = false;
@@ -125,7 +129,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         }
 
         private Sample(int titleResId, int descriptionResId,
-                Class<? extends Activity> activityClass) {
+                       Class<? extends Activity> activityClass) {
             this(titleResId, descriptionResId,
                     new Intent(MainActivity.this, activityClass));
         }

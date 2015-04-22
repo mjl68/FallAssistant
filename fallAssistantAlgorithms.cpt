@@ -1,0 +1,62 @@
+Created by mjl68 on 4/22/2015
+
+This is a concept file with following syntax for each concept.
+# Concept Heading
+* step1
+* step2
+
+#(View) MainActivity
+* Displays Home screen to users
+* (Start/Stop Sensor Button)Calls to faModel object to start/stop sensor service
+* (Options Button)Calls NavigationDrawerActivity to display Options Menu
+* <Todo>(Help Me! Button)Calls to <Controller> object to perform actual "SMS / Email"
+
+#(View) NavigationDrawerActivity
+* Displays options interface(s) to users
+* Calls to faModel object to update/retrieve sensor related settings
+* <Todo>Options: (SMS Button) Select SMS communication (XOR with eMail Button)
+* <Todo>Options: (eMail Button) Select eMail communication
+* <Todo>Options: (Contact TextBox) v0.5 = manual entry, v1.0 = contact picker (w/ Manual Entry X)
+* <Todo>Options: (Message TextBox) User enters customized message to be used in callForHelp
+* <Todo>Options: (Test Message Button) Displays simulated message with Google Maps URL with location
+* <Todo>Calls faModel to retrieve location
+* <Todo>-.getLoc() {Convert location (coords) to Google Maps URL (shortened?) }
+* <Todo>Calls <Controller> to update/retrieve contact related settings
+* <Todo>Calls <Controller> to perform actual "SMS / Email"
+
+#(View) OptionAdapter
+* Creates option list
+
+#(Model) faModel
+* Controls the sensor communication, post-fall-movement-detection (no movement == call)
+* Uses SensorManager,TriggerEventListener for sensor data
+* <Todo>Query APIs to verify HW functionality
+* <Todo>Saves/Restore settings from phone (if available, defaults if not)
+* <Todo>.getLoc() / .getLocRaw to return location data
+* <Todo>eventTriggered() to detect post-fall inactivity
+
+#<Todo>(Model) .eventTriggered(sensor.SIG_MOTION):
+* <Todo>-.determineLoc()
+
+#<Todo>(Model) 
+* <Todo>-Use sensor(accel) to store (up to)15 secs of sensor motion in circular buffer
+* <Todo>-Perform calc on last 3 sec window to acquire movement vector
+* <Todo>-If (vector > threshold(?) ) { faController.callForHelp(getLoc()) }
+
+#<Todo>(Model) string faModel.getLoc()
+* <Todo>Call .getLocRaw()
+* <Todo>Convert to Google Maps URL (shortened)
+* <Todo>return URL
+
+#<Todo>(Model) int[] faModel.getLocRaw()
+* <Todo>Use GPS/etc to determine location
+* <Todo>return coord array
+
+#(Controller) faController
+* Performs SMS/Email contact
+* <Todo>-Saves/restores contact avenue/settings to phone
+* <Todo>-String .getHelpMsg (string locUrl) { ret message + locUrl }
+* <Todo>-Boolean .callForHelpSMS (string number, helpMsg) { perform contact, ret true = pass, false = fail }
+* <Todo>-Boolean .callForHelpEmail (string email, helpMsg) { perform contact, ret true = pass, false = fail }
+
+

@@ -12,6 +12,13 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * ========================================================================
+ * (View) NavigationDrawerActivity
+ * - Displays options interface(s) to users
+ * - Calls to faModel object to update/retrieve sensor related settings
+ * - <Todo>Calls to <Controller> to update/retrieve contact related settings
+ * - <Todo>Calls to <Controller> object to perform actual "SMS / Email"
+ *
  */
 
 package com.falldetect2015.android.fallassistant;
@@ -40,9 +47,6 @@ import android.widget.Toast;
 import java.util.Locale;
 
 /**
- * This example illustrates a common usage of the DrawerLayout widget
- * in the Android support library.
- * <p/>
  * <p>When a navigation (left) drawer is present, the host activity should detect presses of
  * the action bar's Up affordance as a signal to open and close the navigation drawer. The
  * ActionBarDrawerToggle facilitates this behavior.
@@ -53,6 +57,7 @@ import java.util.Locale;
  * list or tab navigation in that a view switch does not create navigation history.
  * This pattern should only be used at the root activity of a task, leaving some form
  * of Up navigation active for activities further down the navigation hierarchy.</li>
+ * <p/>
  * <li><strong>Selective Up</strong>. The drawer allows the user to choose an alternate
  * parent for Up navigation. This allows a user to jump across an app's navigation
  * hierarchy at will. The application should treat this as it treats Up navigation from
@@ -66,6 +71,7 @@ import java.util.Locale;
  * An action should be an operation performed on the current contents of the window,
  * for example enabling or disabling a data overlay on top of the current content.</p>
  */
+
 public class NavigationDrawerActivity extends Activity implements OptionAdapter.OnItemClickListener {
     private DrawerLayout mDrawerLayout;
     private RecyclerView mDrawerList;

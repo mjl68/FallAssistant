@@ -13,15 +13,24 @@
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
+  add back to "options_array":
+        <item>Sensor Options</item>
   -->
 <resources>
     <string-array name="options_array">
         <item>Contact Options</item>
-        <item>Sensor Options</item>
     </string-array>
     <string name="drawer_open">Open options navigation drawer</string>
     <string name="drawer_close">Close options navigation drawer</string>
     <string name="service_fail">Sensor service failure, please restart the application</string>
     <string name="action_websearch">Web search</string>
     <string name="app_not_available">Sorry, there\'s no web browser available</string>
+
+    <string name="new_message_notification_title_template">Fall Assistant: %1$s</string>
+
+    <!-- TODO: remove this placeholder text -->
+    <string name="notification_text_service_up">The service is %1$s running.</string>
+
+    <string name="action_share">Share</string>
+    <string name="action_reply">Reply</string>
 </resources>
