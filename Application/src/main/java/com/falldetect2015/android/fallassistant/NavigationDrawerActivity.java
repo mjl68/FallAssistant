@@ -211,7 +211,7 @@ public class NavigationDrawerActivity extends Activity implements OptionAdapter.
     }
 
     /**
-     * Fragment that appears in the "content_frame", shows a planet
+     * Fragment that appears in the "content_frame", shows an Option
      */
     public static class OptionsFragment extends Fragment {
         public static final String ARG_OPTIONS_NUMBER = "options_number";
@@ -233,14 +233,14 @@ public class NavigationDrawerActivity extends Activity implements OptionAdapter.
                                  Bundle savedInstanceState) {
             View rootView = inflater.inflate(com.falldetect2015.android.fallassistant.R.layout.fragment_options, container, false);
             int i = getArguments().getInt(ARG_OPTIONS_NUMBER);
-            String planet = getResources().getStringArray(com.falldetect2015.android.fallassistant.R.array.options_array)[i];
+            String optionString = getResources().getStringArray(com.falldetect2015.android.fallassistant.R.array.options_array)[i];
 
-            int imageId = getResources().getIdentifier(planet.toLowerCase(Locale.getDefault()),
+            int imageId = getResources().getIdentifier(optionString.toLowerCase(Locale.getDefault()),
                     "drawable", getActivity().getPackageName());
             ImageView iv = ((ImageView) rootView.findViewById(com.falldetect2015.android.fallassistant.R.id.image));
             iv.setImageResource(imageId);
 
-            getActivity().setTitle(planet);
+            getActivity().setTitle(optionString);
             return rootView;
         }
     }
