@@ -17,8 +17,8 @@
  * - Displays Home screen to users
  * - Calls to faModel object to start/stop sensor service
  * - <Todo>Calls to <Controller> object to perform actual "SMS / Email"
- *
- */http://examples.javacodegeeks.com/android/core/hardware/sensor/android-accelerometer-example/
+ * http://examples.javacodegeeks.com/android/core/hardware/sensor/android-accelerometer-example/
+ */
 
 package com.falldetect2015.android.fallassistant;
 
