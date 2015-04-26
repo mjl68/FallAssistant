@@ -1,68 +1,65 @@
 <?xml version="1.0" encoding="utf-8"?>
-<items version="2" >
+<items version="2">
 
     <item
-        jar="C:\code\projects\android\android-fallassistant\Application\build\intermediates\exploded-aar\com.android.support\recyclerview-v7\21.0.2\classes.jar"
-        jumboMode="false"
-        revision="21.1.2"
-        sha1="4796f18d3750bf2bfa078407a94a7f9db35b440d">
-        <dex dex="C:\code\projects\android\android-fallassistant\Application\build\intermediates\pre-dexed\debug\classes-3fbf55f525f87138230c35831a155a2a5a59e8e5.jar" />
+        jar="C:\code\projects\android\android-fallassistant\Application\build\intermediates\exploded-aar\com.android.support\support-v4\22.1.0\classes.jar"
+        jumboMode="false" revision="21.1.2" sha1="eeebabdfd8203f6ab639ccea4ffa1f20e1adee3a">
+        <dex
+            dex="C:\code\projects\android\android-fallassistant\Application\build\intermediates\pre-dexed\debug\classes-eacc44eb1778109da250cc7b258b13c392be847c.jar" />
     </item>
     <item
-        jar="C:\code\projects\android\android-fallassistant\Application\build\intermediates\exploded-aar\com.android.support\support-v4\21.0.2\libs\internal_impl-21.0.2.jar"
-        jumboMode="false"
-        revision="21.1.2"
-        sha1="962e8b12569c56dbdcf8367eb4eac8bb129cd18f">
-        <dex dex="C:\code\projects\android\android-fallassistant\Application\build\intermediates\pre-dexed\debug\internal_impl-21.0.2-ab7bbec51afe4e872adf5aa1205a6605684ccbdc.jar" />
+        jar="C:\code\projects\android\android-fallassistant\Application\build\intermediates\exploded-aar\com.android.support\support-v13\22.1.0\libs\internal_impl-22.1.0.jar"
+        jumboMode="false" revision="21.1.2" sha1="50c645d80504c40e34e6bb88360b9a5c1df99b0b">
+        <dex
+            dex="C:\code\projects\android\android-fallassistant\Application\build\intermediates\pre-dexed\debug\internal_impl-22.1.0-c1051ab2abd858cc4ce5c30b7284212675b09356.jar" />
     </item>
     <item
-        jar="C:\code\projects\android\android-fallassistant\Application\build\intermediates\exploded-aar\com.android.support\cardview-v7\21.0.2\classes.jar"
-        jumboMode="false"
-        revision="21.1.2"
-        sha1="b017100da14f9c158c9f5f2f508333c224b24a7c">
-        <dex dex="C:\code\projects\android\android-fallassistant\Application\build\intermediates\pre-dexed\debug\classes-8d5363987149fbcea38ee5182ac51aa6e61851c2.jar" />
-    </item>
-    <item
-        jar="C:\code\projects\android\android-fallassistant\Application\build\intermediates\exploded-aar\com.android.support\support-v13\21.0.2\libs\internal_impl-21.0.2.jar"
-        jumboMode="false"
-        revision="21.1.2"
-        sha1="9346da9fb778af9e451211bbc3541daced174ba7">
-        <dex dex="C:\code\projects\android\android-fallassistant\Application\build\intermediates\pre-dexed\debug\internal_impl-21.0.2-0acdadfe86bc60b214c40814ea6180301f4d8f93.jar" />
-    </item>
-    <item
-        jar="C:\code\projects\android\android-fallassistant\Application\build\intermediates\exploded-aar\com.android.support\appcompat-v7\21.0.2\classes.jar"
-        jumboMode="false"
-        revision="21.1.2"
-        sha1="7ae2d38807a43b2f2185ff4089a92c790b579e54">
-        <dex dex="C:\code\projects\android\android-fallassistant\Application\build\intermediates\pre-dexed\debug\classes-757db529f476664a8f9bc2b6960c054df3f3c7fe.jar" />
-    </item>
-    <item
-        jar="C:\Users\Dell\AppData\Local\Android\sdk\extras\android\m2repository\com\android\support\support-annotations\21.0.2\support-annotations-21.0.2.jar"
-        jumboMode="false"
-        revision="21.1.2"
-        sha1="99373741f99a0556ee293c41e8faa1ca3ae8a4e6">
-        <dex dex="C:\code\projects\android\android-fallassistant\Application\build\intermediates\pre-dexed\debug\support-annotations-21.0.2-467ecc00b102184a7570d8966a4c77067d1ff997.jar" />
-    </item>
-    <item
-        jar="C:\code\projects\android\android-fallassistant\Application\build\intermediates\exploded-aar\com.android.support\support-v4\21.0.2\classes.jar"
-        jumboMode="false"
-        revision="21.1.2"
-        sha1="d1bf02de1c56d942e7a9d093b8610ba1ef4128e3">
-        <dex dex="C:\code\projects\android\android-fallassistant\Application\build\intermediates\pre-dexed\debug\classes-366559dca8a1225c4977c0adf2bc4ded363bedf4.jar" />
-    </item>
-    <item
-        jar="C:\code\projects\android\android-fallassistant\Application\build\intermediates\exploded-aar\com.android.support\support-v13\21.0.2\classes.jar"
-        jumboMode="false"
-        revision="21.1.2"
-        sha1="61965ae058916e6a57950dd61b0164dc866af19a">
-        <dex dex="C:\code\projects\android\android-fallassistant\Application\build\intermediates\pre-dexed\debug\classes-a409a221df9f0b358f8647e2b706617d59422683.jar" />
+        jar="C:\code\projects\android\android-fallassistant\Application\build\intermediates\exploded-aar\com.android.support\support-v4\22.1.0\libs\internal_impl-22.1.0.jar"
+        jumboMode="false" revision="21.1.2" sha1="025cb89f2896c63200ff4c2e6c467a95691d880a">
+        <dex
+            dex="C:\code\projects\android\android-fallassistant\Application\build\intermediates\pre-dexed\debug\internal_impl-22.1.0-c7aef76810d0f6bbb34bf09b1cabfb157d7c37c9.jar" />
     </item>
     <item
         jar="C:\Users\Dell\.gradle\caches\modules-2\files-2.1\com.squareup.okio\okio\1.3.0\1b355f73402020c5a0dcca58affc3ec3dfeabac1\okio-1.3.0.jar"
-        jumboMode="false"
-        revision="21.1.2"
-        sha1="1b355f73402020c5a0dcca58affc3ec3dfeabac1">
-        <dex dex="C:\code\projects\android\android-fallassistant\Application\build\intermediates\pre-dexed\debug\okio-1.3.0-062a18da28afb5dfafa06693c93c77e293d4d2b4.jar" />
+        jumboMode="false" revision="21.1.2" sha1="1b355f73402020c5a0dcca58affc3ec3dfeabac1">
+        <dex
+            dex="C:\code\projects\android\android-fallassistant\Application\build\intermediates\pre-dexed\debug\okio-1.3.0-062a18da28afb5dfafa06693c93c77e293d4d2b4.jar" />
+    </item>
+    <item
+        jar="C:\code\projects\android\android-fallassistant\Application\build\intermediates\exploded-aar\com.android.support\cardview-v7\22.1.0\classes.jar"
+        jumboMode="false" revision="21.1.2" sha1="66fd9d179eb79b64c99e555dead32e725792217a">
+        <dex
+            dex="C:\code\projects\android\android-fallassistant\Application\build\intermediates\pre-dexed\debug\classes-85dadd7b67c5c3b8241da284796774b3076a9ddb.jar" />
+    </item>
+    <item
+        jar="C:\code\projects\android\android-fallassistant\Application\build\intermediates\exploded-aar\com.android.support\appcompat-v7\22.1.0\classes.jar"
+        jumboMode="false" revision="21.1.2" sha1="983e2f375504bc04def18e709c35192afe92e65f">
+        <dex
+            dex="C:\code\projects\android\android-fallassistant\Application\build\intermediates\pre-dexed\debug\classes-5696bc3edb8ef09d9962c8eaa85b738125e91a54.jar" />
+    </item>
+    <item
+        jar="C:\code\projects\android\android-fallassistant\Application\build\intermediates\exploded-aar\com.android.support\support-v13\22.1.0\classes.jar"
+        jumboMode="false" revision="21.1.2" sha1="b6f3fd41dae8c43531192af02ddf5429a1c44446">
+        <dex
+            dex="C:\code\projects\android\android-fallassistant\Application\build\intermediates\pre-dexed\debug\classes-d8642f515a6b1c11449b7592a88ab9cd8ae321b6.jar" />
+    </item>
+    <item
+        jar="C:\Users\Dell\AppData\Local\Android\sdk\extras\android\m2repository\com\android\support\support-annotations\22.1.0\support-annotations-22.1.0.jar"
+        jumboMode="false" revision="21.1.2" sha1="281bc6c58ecb3644c23fbc5ee0452019f67b4d5d">
+        <dex
+            dex="C:\code\projects\android\android-fallassistant\Application\build\intermediates\pre-dexed\debug\support-annotations-22.1.0-b2e9b8a7499ff003ee08591ba59ebbb536cccb0d.jar" />
+    </item>
+    <item
+        jar="C:\code\projects\android\android-fallassistant\Application\build\intermediates\exploded-aar\com.android.support\recyclerview-v7\22.1.0\classes.jar"
+        jumboMode="false" revision="21.1.2" sha1="80434c45861675a57d690fba5ca31c3d55c89489">
+        <dex
+            dex="C:\code\projects\android\android-fallassistant\Application\build\intermediates\pre-dexed\debug\classes-258017aabe088ccdfb14a576bf339740434c07db.jar" />
+    </item>
+    <item
+        jar="C:\Users\Dell\.gradle\caches\modules-2\files-2.1\de.greenrobot\eventbus\2.4.0\ddd166d01b3158d1c00576d29f7ed15c030df719\eventbus-2.4.0.jar"
+        jumboMode="false" revision="21.1.2" sha1="ddd166d01b3158d1c00576d29f7ed15c030df719">
+        <dex
+            dex="C:\code\projects\android\android-fallassistant\Application\build\intermediates\pre-dexed\debug\eventbus-2.4.0-593904ffbe0871dc59727fc6d9e2908ed7ff50ff.jar" />
     </item>
 
 </items>
