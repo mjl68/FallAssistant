@@ -58,7 +58,6 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -117,7 +116,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         setContentView(com.falldetect2015.android.fallassistant.R.layout.activity_main);
         mSamplesSwitch = false;
         svcRunning = false;
-        engine = new TextToSpeech(this, this);
+        // engine = new TextToSpeech(this, this);
         stopSampling();
         // Prepare list of samples in this dashboard.
         mSamples = new Sample[]{
@@ -233,7 +232,6 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
                 }
                 break;
             }
-
         }
     }
 
@@ -365,15 +363,16 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
                         Toast.LENGTH_LONG).show();
                 e.printStackTrace();
             }
-
+            /*
             if (myGeocodeLocation == null) {
                 showAlert("GeoCode", myGeocodeLocation);
                 myGeocodeLocation = String.valueOf(currentLattitude) + " " + String.valueOf(currentLongitude);
-            }
-            String helpMessage = "I have fallen and need help, sent by fall assistant app" + " http://maps.google.com/maps?q=" + URLEncoder.encode(myGeocodeLocation, "utf-8");
+            }*/
+            String helpMessage = "I have fallen and need help, sent by fall assistant app";
+            //+ " http://maps.google.com/maps?q=" + URLEncoder.encode(myGeocodeLocation, "utf-8")
             SmsManager smsManager = SmsManager.getDefault();
-            speech();
-            promptSpeechInput();
+            //speech();
+            //promptSpeechInput();
             smsManager.sendTextMessage(PREF_CONTACT_NUMBER,
                     null,
                     helpMessage,
@@ -439,36 +438,12 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         alertDialog.show();
     }
 
-    private void speech() {
-        engine.setPitch((float) pitch);
-        engine.setSpeechRate((float) speed);
-        engine.speak("Do you Need help?", TextToSpeech.QUEUE_FLUSH, null);
-    }
-
-    private void promptSpeechInput() {
-        Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
-        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
-        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault());
-        intent.putExtra(RecognizerIntent.EXTRA_PROMPT,
-                getString(R.string.speech_prompt));
-        try {
-            startActivityForResult(intent, REQ_CODE_SPEECH_INPUT);
-        } catch (ActivityNotFoundException a) {
-            Toast.makeText(getApplicationContext(),
-                    getString(R.string.speech_not_supported),
-                    Toast.LENGTH_SHORT).show();
-        }
-    }
-
     public void help() {
         speech();
         promptSpeechInput();
-        if(needhelp) {
+        if (needhelp) {
 
-        }
-        else
-        {
+        } else {
             exittimer = false;
             new CountDownTimer(waitSeconds, 1000) {
 
@@ -488,6 +463,28 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
                     }
                 }
             }.start();
+        }
+    }
+
+    private void speech() {
+        engine.setPitch((float) pitch);
+        engine.setSpeechRate((float) speed);
+        engine.speak("Do you Need help?", TextToSpeech.QUEUE_FLUSH, null);
+    }
+
+    private void promptSpeechInput() {
+        Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault());
+        intent.putExtra(RecognizerIntent.EXTRA_PROMPT,
+                getString(R.string.speech_prompt));
+        try {
+            startActivityForResult(intent, REQ_CODE_SPEECH_INPUT);
+        } catch (ActivityNotFoundException a) {
+            Toast.makeText(getApplicationContext(),
+                    getString(R.string.speech_not_supported),
+                    Toast.LENGTH_SHORT).show();
         }
     }
 
