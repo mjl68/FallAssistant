@@ -49,14 +49,12 @@
         <activity
             android:name=".contactSettings"
             android:label="@string/app_name"/>
+        <activity android:name=".SensorMonitor"/>
 
+        <service android:name=".faSensorService"/>
         <service
             android:name=".FetchAddressIntentService"
             android:exported="false"/>
-        <service
-            android:name=".faSensorService"
-            android:exported="false">
-        </service>
     </application>
 
 </manifest>
