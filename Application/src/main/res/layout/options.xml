@@ -20,7 +20,7 @@
         android:layout_height="60dp"
         android:inputType="phone"
         android:ems="10"
-        android:id="@+id/editText" />
+        android:id="@+id/phonenumber" />
 
     <TextView
         android:layout_width="match_parent"
@@ -35,7 +35,7 @@
     <EditText
         android:layout_width="match_parent"
         android:layout_height="60dp"
-        android:id="@+id/editText2"
+        android:id="@+id/pesonalmessage"
         android:layout_gravity="center_horizontal"
         android:layout_weight="0.19" />
 
