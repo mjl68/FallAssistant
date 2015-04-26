@@ -1821,6 +1821,8 @@ containing a value of this type.
         public static final int notification_text_service_up=0x7f0b0024;
         public static final int sensor_timeout=0x7f0b0025;
         public static final int service_fail=0x7f0b0026;
+        public static final int speech_not_supported=0x7f0b0027;
+        public static final int speech_prompt=0x7f0b0028;
     }
     public static final class style {
         public static final int AlertDialog_AppCompat=0x7f0c0000;

@@ -36,4 +36,6 @@
 
     <string name="action_share">Share</string>
     <string name="action_reply">Reply</string>
+    <string name="speech_prompt">Say something&#8230;</string>
+    <string name="speech_not_supported">Sorry! Your device doesn\'t support speech input</string>
 </resources>
