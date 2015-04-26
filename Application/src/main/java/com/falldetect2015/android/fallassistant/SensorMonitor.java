@@ -12,16 +12,16 @@ import android.os.Bundle;
 import android.os.PowerManager;
 import android.util.Log;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.List;
 
 public class SensorMonitor extends Activity implements SensorEventListener {
     static final String LOG_TAG = "SENSORMONITOR";
     static final String SERVICESTARTED_KEY = "serviceStarted";
     static final String SENSORNAME_KEY = "sensorName";
+    private static final String PREF_FILE = "prefs";
+    private static final String PREF_SERVICE_STATE = "serviceState";
+    private static final String PREF_SAMPLING_SPEED = "samplingSpeed";
+    private static final String PREF_WAIT_SECS = "waitSeconds";
     private PowerManager.WakeLock sensorServiceWakeLock;
     private String sensorName;
     private boolean captureState = false;
@@ -31,16 +31,21 @@ public class SensorMonitor extends Activity implements SensorEventListener {
     private long baseMillisec = -1L;
     private long samplesPerSec = 0;
     private String captureStateText;
+    private Boolean DEBUG = MainActivity.DEBUG;
+    private Boolean svcRunning;
 
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        MainActivity.svcRunning = false;
+        SharedPreferences appPrefs = getSharedPreferences(
+                PREF_FILE,
+                MODE_PRIVATE);
+        svcRunning = appPrefs.getBoolean(PREF_SERVICE_STATE, false);
         sensorName = null;
         //setContentView( R.layout.monitor );
         Intent i = getIntent();
         if (i != null) {
             sensorName = i.getStringExtra("sensorname");
-            if (MainActivity.DEBUG)
+            if (DEBUG)
                 Log.d(LOG_TAG, "sensorName: " + sensorName);
             if (sensorName != null) {
                 //TextView t = (TextView)findViewById( R.id.sensorname );
@@ -48,28 +53,25 @@ public class SensorMonitor extends Activity implements SensorEventListener {
             }
         }
         if (savedInstanceState != null) {
-            MainActivity.svcRunning = savedInstanceState.getBoolean(SERVICESTARTED_KEY, false);
+            svcRunning = savedInstanceState.getBoolean(SERVICESTARTED_KEY, false);
             sensorName = savedInstanceState.getString(SENSORNAME_KEY);
         }
-        SharedPreferences appPrefs = getSharedPreferences(
-                MainActivity.PREF_FILE,
-                MODE_PRIVATE);
-        captureState = appPrefs.getBoolean(MainActivity.PREF_SERVICE_STATE, false);
+        captureState = appPrefs.getBoolean(PREF_SERVICE_STATE, false);
         captureStateText = null;
         if (captureState) {
-            File captureFileName = new File("/sdcard", "capture.csv");
-            captureStateText = "Capture: " + captureFileName.getAbsolutePath();
-            try {
+            //File captureFileName = new File("/sdcard", "capture.csv");
+            //captureStateText = "Capture: " + captureFileName.getAbsolutePath();
+          /*  try {
 // if we are restarting (e.g. due to orientation change), we append to the log file instead of overwriting it
-                captureFile = new PrintWriter(new FileWriter(captureFileName, MainActivity.svcRunning));
+            //    captureFile = new PrintWriter(new FileWriter(captureFileName, svcRunning));
             } catch (IOException ex) {
                 Log.e(LOG_TAG, ex.getMessage(), ex);
-                captureStateText = "Capture: " + ex.getMessage();
-            }
+           //     captureStateText = "Capture: " + ex.getMessage();
+            }*/
         } else
             captureStateText = "Capture: OFF";
         rate = appPrefs.getInt(
-                MainActivity.PREF_SAMPLING_SPEED,
+                PREF_SAMPLING_SPEED,
                 mSensorManager.SENSOR_DELAY_UI);
         captureStateText += "; rate: " + getRateName(rate);
         //TextView t = (TextView)findViewById( R.id.capturestate );
@@ -78,83 +80,72 @@ public class SensorMonitor extends Activity implements SensorEventListener {
 
     protected void onStart() {
         super.onStart();
-        if (MainActivity.DEBUG)
+        if (DEBUG)
             Log.d(LOG_TAG, "onStart");
         startService();
     }
 
     protected void onResume() {
         super.onResume();
-        if (MainActivity.DEBUG)
+        if (DEBUG)
             Log.d(LOG_TAG, "onResume");
         startService();
     }
 
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-        if (MainActivity.DEBUG)
+        if (DEBUG)
             Log.d(LOG_TAG, "onSaveInstanceState");
-        outState.putBoolean(SERVICESTARTED_KEY, MainActivity.svcRunning);
+        outState.putBoolean(SERVICESTARTED_KEY, svcRunning);
         if (sensorName != null)
             outState.putString(SENSORNAME_KEY, sensorName);
     }
 
     protected void onPause() {
         super.onPause();
-        if (MainActivity.DEBUG)
+        if (DEBUG)
             Log.d(LOG_TAG, "onPause");
         stopService();
+        startService();
     }
 
     protected void onStop() {
         super.onStop();
-        if (MainActivity.DEBUG)
+        if (DEBUG)
             Log.d(LOG_TAG, "onStop");
+        stopService();
     }
 
     private void stopService() {
-        if (MainActivity.svcRunning == false)
+        if (svcRunning == false)
             return;
         if (mSensorManager != null)
             mSensorManager.unregisterListener(this);
-        if (captureFile != null) {
-            captureFile.close();
-            captureFile = null;
-        }
+
         if (sensorServiceWakeLock != null) {
             sensorServiceWakeLock.release();
             sensorServiceWakeLock = null;
             Log.d(LOG_TAG, "PARTIAL_WAKE_LOCK released");
         }
-        MainActivity.svcRunning = false;
+        svcRunning = false;
     }
 
     private void startService() {
-        if (MainActivity.svcRunning)
+        if (svcRunning)
             return;
         if (sensorName != null) {
             mSensorManager =
                     (SensorManager) getSystemService(SENSOR_SERVICE);
-            List<Sensor> sensors = mSensorManager.getSensorList(Sensor.TYPE_ALL);
-            Sensor ourSensor = null;
-            for (int i = 0; i < sensors.size(); ++i)
-                if (sensorName.equals(sensors.get(i).getName())) {
-                    ourSensor = sensors.get(i);
-                    break;
-                }
-            if (ourSensor != null) {
-                baseMillisec = -1L;
-                mSensorManager.registerListener(
-                        this,
-                        ourSensor,
-                        rate);
-            }
+            mSensorManager.registerListener(this,
+                    mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER),
+                    SensorManager.SENSOR_DELAY_UI);
+
 // Obtain partial wakelock so that sampling does not stop even if the device goes to sleep
             PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
             sensorServiceWakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "SensorMonitor");
             sensorServiceWakeLock.acquire();
             Log.d(LOG_TAG, "PARTIAL_WAKE_LOCK acquired");
-            MainActivity.svcRunning = true;
+            svcRunning = true;
         }
     }
 
@@ -164,15 +155,12 @@ public class SensorMonitor extends Activity implements SensorEventListener {
             case SensorManager.SENSOR_DELAY_UI:
                 result = "UI";
                 break;
-
             case SensorManager.SENSOR_DELAY_NORMAL:
                 result = "Normal";
                 break;
-
             case SensorManager.SENSOR_DELAY_GAME:
                 result = "Game";
                 break;
-
             case SensorManager.SENSOR_DELAY_FASTEST:
                 result = "Fastest";
                 break;

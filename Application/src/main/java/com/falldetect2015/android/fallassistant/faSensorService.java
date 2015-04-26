@@ -10,17 +10,14 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.os.CountDownTimer;
 import android.os.IBinder;
 import android.os.PowerManager;
-import android.util.Config;
 import android.util.Log;
+import android.widget.Toast;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Date;
-import java.util.List;
 
 public class faSensorService extends Service implements SensorEventListener {
     static final String LOG_TAG = "faSensorService";
@@ -28,35 +25,58 @@ public class faSensorService extends Service implements SensorEventListener {
     static final boolean MINIMAL_ENERGY = false;
     static final long MINIMAL_ENERGY_LOG_PERIOD = 500L;
     private static final String SAMPLING_SERVICE_POSITION_KEY = "sensorServicePositon";
+    private static final String PREF_FILE = "prefs";
+    private static final String PREF_SERVICE_STATE = "serviceState";
+    private static final String PREF_SAMPLING_SPEED = "samplingSpeed";
+    private static final String PREF_WAIT_SECS = "waitSeconds";
     private String sensorName;
     private int rate = SensorManager.SENSOR_DELAY_UI;
     private SensorManager mSensorManager;
     private PrintWriter captureFile;
     private ScreenOffBroadcastReceiver screenOffBroadcastReceiver = null;
-    private Sensor ourSensor;
+    private Sensor mAccelerometer;
     private GenerateUserActivityThread generateUserActivityThread = null;
     private long logCounter = 0;
     private PowerManager.WakeLock serviceInProgressWakeLock;
     private Date serviceStartedTimeStamp;
     private boolean sensorServiceRunning = false;
     private int sensorServicePosition = 0;
+    private float normalThreshold = 10;
+    private float fallenThreshold = 2;
+    private Boolean fallDetected = false;
+    private Boolean noMovement = true;
+    private float[] lastSensorValues = new float[3];
+    private float[] mGravity;
+    private float mAccelCurrent;
+    private float mAccelLast;
+    private float mAccel;
+    private float maxAccelSeen = 0;
+    private long baseMillisec = -1L;
+    private long samplesPerSec = 0;
+    private int defWaitSecs = 20;
+    private int waitSeconds;
+    private int svcState;
+    private Boolean DEBUG = MainActivity.DEBUG;
+    private Boolean svcRunning;
 
     public int onStartCommand(Intent intent, int flags, int startId) {
         super.onStartCommand(intent, flags, startId);
+        SharedPreferences appPrefs = getSharedPreferences(
+                PREF_FILE,
+                MODE_PRIVATE);
+        svcRunning = appPrefs.getBoolean(PREF_SERVICE_STATE, false);
+        waitSeconds = appPrefs.getInt(PREF_WAIT_SECS, defWaitSecs);
         if (MainActivity.DEBUG)
             Log.d(LOG_TAG, "onStartCommand");
-        MainActivity.svcRunning = false;
+        svcRunning = false;
         stopSensorService();        // just in case the activity-level service management fails
         sensorName = intent.getStringExtra("sensorname");
-        if (MainActivity.DEBUG)
+        if (DEBUG)
             Log.d(LOG_TAG, "sensorName: " + sensorName);
-        SharedPreferences appPrefs = getSharedPreferences(
-                MainActivity.PREF_FILE,
-                MODE_PRIVATE);
         rate = appPrefs.getInt(
-                MainActivity.PREF_SAMPLING_SPEED,
+                PREF_SAMPLING_SPEED,
                 SensorManager.SENSOR_DELAY_UI);
-        if (MainActivity.DEBUG)
+        if (DEBUG)
             Log.d(LOG_TAG, "rate: " + rate);
 
         screenOffBroadcastReceiver = new ScreenOffBroadcastReceiver();
@@ -66,7 +86,7 @@ public class faSensorService extends Service implements SensorEventListener {
             registerReceiver(screenOffBroadcastReceiver, screenOffFilter);
         mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         startSensorService();
-        if (MainActivity.DEBUG)
+        if (DEBUG)
             Log.d(LOG_TAG, "onStartCommand ends");
         return START_NOT_STICKY;
     }
@@ -88,22 +108,22 @@ public class faSensorService extends Service implements SensorEventListener {
     }   // cannot bind
 
     private void stopSensorService() {
-        if ((MainActivity.svcRunning != null) && (MainActivity.svcRunning != true))
+        if ((svcRunning != null) && (svcRunning != true))
             return;
         if (generateUserActivityThread != null) {
             generateUserActivityThread.stopThread();
             generateUserActivityThread = null;
         }
         if (mSensorManager != null) {
-            if (Config.DEBUG)
+            if (DEBUG)
                 Log.d(LOG_TAG, "unregisterListener/faSensorService");
             mSensorManager.unregisterListener(this);
         }
         if (captureFile != null) {
-            captureFile.close();
-            captureFile = null;
+            //captureFile.close();
+            //captureFile = null;
         }
-        MainActivity.svcRunning = false;
+        svcRunning = false;
         serviceInProgressWakeLock.release();
         serviceInProgressWakeLock = null;
         Date serviceStoppedTimeStamp = new Date();
@@ -119,82 +139,113 @@ public class faSensorService extends Service implements SensorEventListener {
     }
 
     private void startSensorService() {
-        if ((MainActivity.svcRunning != null) && (MainActivity.svcRunning == true)) {
+        if ((svcRunning != null) && (svcRunning == true)) {
             return;
         }
-        if (sensorName != null) {
-            List<Sensor> sensors = mSensorManager.getSensorList(Sensor.TYPE_ALL);
-            ourSensor = null;
-            ;
-            for (int i = 0; i < sensors.size(); ++i)
-                if (sensorName.equals(sensors.get(i).getName())) {
-                    ourSensor = sensors.get(i);
-                    break;
-                }
-            if (ourSensor != null) {
-                if (MainActivity.DEBUG)
+        mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
+        mSensorManager.registerListener(this,
+                mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER),
+                SensorManager.SENSOR_DELAY_UI);
+        if (DEBUG)
                     Log.d(LOG_TAG, "registerListener/faSensorService");
-                mSensorManager.registerListener(
-                        this,
-                        ourSensor,
-                        rate);
-            }
             serviceStartedTimeStamp = new Date();
             PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
             serviceInProgressWakeLock =
                     pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "SamplingInProgress");
             serviceInProgressWakeLock.acquire();
-            captureFile = null;
-            if (MainActivity.DEBUG)
-                Log.d(LOG_TAG, "Capture file created");
-            File captureFileName = new File("/sdcard", "capture.csv");
-            try {
-                captureFile = new PrintWriter(new FileWriter(captureFileName, false));
-            } catch (IOException ex) {
-                Log.e(LOG_TAG, ex.getMessage(), ex);
-            }
-            MainActivity.svcRunning = true;
-        }
+        if (DEBUG)
+            Log.d(LOG_TAG, "Sensor Service Starting...");
+        svcRunning = true;
     }
 
     public void onSensorChanged(SensorEvent sensorEvent) {
-        ++logCounter;
-        if (!MINIMAL_ENERGY) {
-            if (MainActivity.DEBUG) {
-                StringBuilder b = new StringBuilder();
-                for (int i = 0; i < sensorEvent.values.length; ++i) {
-                    if (i > 0)
-                        b.append(" , ");
-                    b.append(Float.toString(sensorEvent.values[i]));
-                }
-                Log.d(LOG_TAG, "onSensorChanged: " + new Date().toString() + " [" + b + "]");
+        if (sensorEvent.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
+            double threshold = (fallDetected == true) ? fallenThreshold : normalThreshold;
+            mGravity = sensorEvent.values.clone();
+            // fall / cant get up detection
+            float x = mGravity[0];
+            lastSensorValues[0] = x;
+            float y = mGravity[1];
+            lastSensorValues[1] = y;
+            float z = mGravity[2];
+            lastSensorValues[2] = z;
+            mAccelLast = mAccelCurrent;
+            mAccelCurrent = (float) Math.sqrt(x * x + y * y + z * z);
+            float delta = mAccelCurrent - mAccelLast;
+            mAccel = Math.abs(mAccel * 0.9f) + delta;
+            if (mAccel > maxAccelSeen) {
+                maxAccelSeen = mAccel;
             }
-            if (captureFile != null) {
-                captureFile.print(Long.toString(sensorEvent.timestamp));
-                for (int i = 0; i < sensorEvent.values.length; ++i) {
-                    captureFile.print(",");
-                    captureFile.print(Float.toString(sensorEvent.values[i]));
+            if (DEBUG)
+                Log.d(LOG_TAG, "Sensor onChange mAccel=" + mAccel + " maxAccelSeen=" + maxAccelSeen + " threshold=" + threshold);
+            if (mAccel > threshold) {
+                maxAccelSeen = 0;
+                if ((fallDetected == true) && (mAccel > fallenThreshold)) {
+                    //MainActivity.sendSmsByManager();
+                    noMovement = false;
+                } else {
+                    if ((fallDetected == false) && (mAccel > normalThreshold)) {
+                        fallDetected = true;
+                        noMovement = true;
+                        new Thread(new Runnable() {
+                            public void run() {
+                                detectMovement();
+                            }
+                        }).start();
+                    }
                 }
-                captureFile.println();
             }
-        } else {
-            ++logCounter;
-            if ((logCounter % MINIMAL_ENERGY_LOG_PERIOD) == 0L)
-                Log.d(LOG_TAG, "logCounter: " + logCounter + " at " + new Date().toString());
         }
+        long currentMillisec = System.currentTimeMillis();
     }
 
     // SensorEventListener
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
     }
 
+    public void detectMovement() {
+        noMovement = true;
+        int waitSecs = waitSeconds;
+        new CountDownTimer(waitSecs, 1000) {
+            @Override
+            public void onTick(long millisUntilFinished) {
+                // check noMovement flag after 1s
+                if (noMovement == false) {
+                    Toast.makeText(getApplicationContext(), "Welcome Back",
+                            Toast.LENGTH_LONG).show();
+                    cancel();
+                }
+            }
+
+            @Override
+            public void onFinish() {
+                // do something end times 5s
+                if (noMovement == true) {
+                    //MainActivity.sendSmsByManager();
+                    noMovement = false;
+                } else {
+                    if ((fallDetected == false) && (mAccel > normalThreshold)) {
+                        fallDetected = true;
+                        noMovement = true;
+                        new Thread(new Runnable() {
+                            public void run() {
+                                detectMovement();
+                            }
+                        }).start();
+                    }
+                    ;
+                }
+            }
+        };
+    }
+
     class ScreenOffBroadcastReceiver extends BroadcastReceiver {
         private static final String LOG_TAG = "ScreenOffBroadcastReceiver";
 
         public void onReceive(Context context, Intent intent) {
-            if (MainActivity.DEBUG)
+            if (DEBUG)
                 Log.d(LOG_TAG, "onReceive: " + intent);
-            if ((mSensorManager != null) && (MainActivity.svcRunning == true)) {
+            if ((mSensorManager != null) && (svcRunning == true)) {
                 if (generateUserActivityThread != null) {
                     generateUserActivityThread.stopThread();
                     generateUserActivityThread = null;
@@ -209,13 +260,13 @@ public class faSensorService extends Service implements SensorEventListener {
         PowerManager.WakeLock userActivityWakeLock;
 
         public void run() {
-            if (MainActivity.DEBUG)
+            if (DEBUG)
                 Log.d(LOG_TAG, "Waiting 2 sec for switching back the screen ...");
             try {
                 Thread.sleep(2000L);
             } catch (InterruptedException ex) {
             }
-            if (MainActivity.DEBUG)
+            if (DEBUG)
                 Log.d(LOG_TAG, "User activity generation thread started");
 
             PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
@@ -223,12 +274,12 @@ public class faSensorService extends Service implements SensorEventListener {
                     pm.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK | PowerManager.ACQUIRE_CAUSES_WAKEUP,
                             "GenerateUserActivity");
             userActivityWakeLock.acquire();
-            if (MainActivity.DEBUG)
+            if (DEBUG)
                 Log.d(LOG_TAG, "User activity generation thread exiting");
         }
 
         public void stopThread() {
-            if (MainActivity.DEBUG)
+            if (DEBUG)
                 Log.d(LOG_TAG, "User activity wake lock released");
             userActivityWakeLock.release();
             userActivityWakeLock = null;
