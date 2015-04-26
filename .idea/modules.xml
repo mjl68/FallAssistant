@@ -3,7 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/Application/Application.iml" filepath="$PROJECT_DIR$/Application/Application.iml" />
-      <module fileurl="file://$PROJECT_DIR$/android-fallassistant.iml" filepath="$PROJECT_DIR$/android-fallassistant.iml" />
+      <module fileurl="file://$PROJECT_DIR$/FallAssistantmaster.iml" filepath="$PROJECT_DIR$/FallAssistantmaster.iml" />
     </modules>
   </component>
 </project>

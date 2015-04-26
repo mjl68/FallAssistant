@@ -18,7 +18,7 @@
  * - Calls to faModel object to start/stop sensor service
  * - <Todo>Calls to <Controller> object to perform actual "SMS / Email"
  *
- */
+ */http://examples.javacodegeeks.com/android/core/hardware/sensor/android-accelerometer-example/
 
 package com.falldetect2015.android.fallassistant;
 
@@ -38,6 +38,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     private Sample[] mSamples;
     private GridView mGridView;
     private Boolean mSamplesSwitch;
+    
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
