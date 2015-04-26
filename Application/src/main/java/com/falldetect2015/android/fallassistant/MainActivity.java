@@ -32,7 +32,9 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
+import android.os.CountDownTimer;
 import android.os.PowerManager;
+import android.telephony.SmsManager;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
@@ -40,6 +42,7 @@ import android.widget.AdapterView;
 import android.widget.BaseAdapter;
 import android.widget.GridView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -52,9 +55,13 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     public static final String PREF_FILE = "prefs";
     public static final String PREF_SERVICE_STATE = "serviceState";
     public static final String PREF_SAMPLING_SPEED = "samplingSpeed";
-    final static int fields[] = {};
-    static final String LOG_TAG = "FallAssistant.";
-    static final String SERVICESTARTED_KEY = "serviceStarted";
+    public static final String PREF_WAIT_SECS = "waitSeconds";
+    private final static int fields[] = {};
+    private static final String LOG_TAG = "FallAssistant.";
+    private static final String SERVICESTARTED_KEY = "serviceStarted";
+    public int rate = SensorManager.SENSOR_DELAY_UI;
+    private int defWaitSecs = 20;
+    private int waitSeconds = 0;
     private Sample[] mSamples;
     private GridView mGridView;
     private Boolean mSamplesSwitch = false;
@@ -62,12 +69,13 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     private PowerManager.WakeLock samplingWakeLock;
     private String sensorName = null;
     private boolean captureState = false;
-    private int rate = SensorManager.SENSOR_DELAY_UI;
     private SensorManager sensorManager;
     private PrintWriter captureFile;
     private long baseMillisec = -1L;
     private long samplesPerSec = 0;
     private String captureStateText;
+    private Boolean fallDetected = false;
+    private Boolean noMovement = true;
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -75,6 +83,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         mSamplesSwitch = false;
         svcRunning = false;
 
+        stopSampling();
         // Prepare list of samples in this dashboard.
         mSamples = new Sample[]{
                 new Sample(com.falldetect2015.android.fallassistant.R.string.nav_1_titl, com.falldetect2015.android.fallassistant.R.string.nav_1_desc,
@@ -104,6 +113,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
                 PREF_FILE,
                 MODE_PRIVATE);
         Boolean svcState = appPrefs.getBoolean(PREF_SERVICE_STATE, false);
+        waitSeconds = appPrefs.getInt(PREF_WAIT_SECS, defWaitSecs);
         String svcStateText = null;
         if (captureState) {
             File captureFileName = new File("/sdcard", "capture.csv");
@@ -136,7 +146,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         super.onResume();
         if (DEBUG)
             Log.d(LOG_TAG, "onResume");
-        if (svcRunning) {
+        if (svcRunning == true) {
             stopSampling();
             startSampling();
         }
@@ -153,7 +163,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         super.onPause();
         if (DEBUG)
             Log.d(LOG_TAG, "onPause");
-        if (svcRunning) {
+        if (svcRunning == true) {
             stopSampling();
             startSampling();
         }
@@ -163,27 +173,10 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         super.onStop();
         if (DEBUG)
             Log.d(LOG_TAG, "onStop");
-        if (svcRunning) {
+        if (svcRunning == true) {
             stopSampling();
             startSampling();
         }
-    }
-
-    private void stopSampling() {
-        if (!svcRunning)
-            return;
-        if (sensorManager != null)
-            sensorManager.unregisterListener(this);
-        if (captureFile != null) {
-            captureFile.close();
-            captureFile = null;
-        }
-        if (samplingWakeLock != null) {
-            samplingWakeLock.release();
-            samplingWakeLock = null;
-            Log.d(LOG_TAG, "PARTIAL_WAKE_LOCK released");
-        }
-        svcRunning = false;
     }
 
     private void startSampling() {
@@ -216,6 +209,23 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         svcRunning = true;
     }
 
+    private void stopSampling() {
+        if (svcRunning == false)
+            return;
+        if (sensorManager != null)
+            sensorManager.unregisterListener(this);
+        if (captureFile != null) {
+            captureFile.close();
+            captureFile = null;
+        }
+        if (samplingWakeLock != null) {
+            samplingWakeLock.release();
+            samplingWakeLock = null;
+            Log.d(LOG_TAG, "PARTIAL_WAKE_LOCK released");
+        }
+        svcRunning = false;
+    }
+
     private String getRateName(int sensorRate) {
         String result = "N/A";
         switch (sensorRate) {
@@ -239,7 +249,9 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     }
 
     public void onSensorChanged(SensorEvent sensorEvent) {
+        // if Sensor movement > ?? -> noMovement = false;
         StringBuilder b = new StringBuilder();
+
         for (int i = 0; i < sensorEvent.values.length; ++i) {
             if (i > 0)
                 b.append(" , ");
@@ -277,25 +289,73 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     @Override
     public void onItemClick(AdapterView<?> container, View view, int position, long id) {
         Boolean serviceState = svcRunning;
-        int i = 200 + 1;
-        if (position > 0) {
+        int x = 0;
+        Boolean pos = position == 2;
+        if (position == 1) {
             startActivity(mSamples[position].intent);
         } else {
-            if (svcRunning == false) {
-                mSamples[0].titleResId = com.falldetect2015.android.fallassistant.R.string.nav_1a_titl;
-                mSamples[0].descriptionResId = com.falldetect2015.android.fallassistant.R.string.nav_1a_desc;
-                svcRunning = true;
-                // Start Service, init vars, etc
-
-                mGridView.invalidateViews();
-            } else {
-                mSamples[0].titleResId = com.falldetect2015.android.fallassistant.R.string.nav_1_titl;
-                mSamples[0].descriptionResId = com.falldetect2015.android.fallassistant.R.string.nav_1_desc;
-                svcRunning = false;
-                // Stop Service, zero vars, etc
-                mGridView.invalidateViews();
+            if (position == 2) {
+                // position == 2, sending SMS
+                sendSmsByManager();
+            }
+            if (position == 0) {
+                if (svcRunning == false) {
+                    mSamples[0].titleResId = com.falldetect2015.android.fallassistant.R.string.nav_1a_titl;
+                    mSamples[0].descriptionResId = com.falldetect2015.android.fallassistant.R.string.nav_1a_desc;
+                    svcRunning = true;
+                    // Start Service, init vars, etc
+                    mGridView.invalidateViews();
+                } else {
+                    mSamples[0].titleResId = com.falldetect2015.android.fallassistant.R.string.nav_1_titl;
+                    mSamples[0].descriptionResId = com.falldetect2015.android.fallassistant.R.string.nav_1_desc;
+                    svcRunning = false;
+                    // Stop Service, zero vars, etc
+                    mGridView.invalidateViews();
+                }
             }
         }
+    }
+
+    public void sendSmsByManager() {
+        try {
+            // Get the default instance of the SmsManager
+            SmsManager smsManager = SmsManager.getDefault();
+            smsManager.sendTextMessage("5126269115",
+                    null,
+                    "I have fallen and needs help, sent by fall assistant app.",
+                    null,
+                    null);
+            Toast.makeText(getApplicationContext(), "Your contacts have been notified",
+                    Toast.LENGTH_LONG).show();
+        } catch (Exception ex) {
+            Toast.makeText(getApplicationContext(), "Your sms has failed...",
+                    Toast.LENGTH_LONG).show();
+            ex.printStackTrace();
+        }
+    }
+
+    public void detectMovement() {
+        noMovement = true;
+        new CountDownTimer(waitSeconds, 1000) {
+
+            @Override
+            public void onTick(long millisUntilFinished) {
+                // do something after 1s
+                if (noMovement == false) {
+                    Toast.makeText(getApplicationContext(), "Welcome Back",
+                            Toast.LENGTH_LONG).show();
+                }
+            }
+
+            @Override
+            public void onFinish() {
+                // do something end times 5s
+                if (noMovement == true) {
+                    sendSmsByManager();
+                }
+            }
+
+        }.start();
     }
 
     private class SampleAdapter extends BaseAdapter {
@@ -329,23 +389,6 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         }
     }
 
-    public void sendSmsByManager() {
-        try {
-            // Get the default instance of the SmsManager
-            SmsManager smsManager = SmsManager.getDefault();
-            smsManager.sendTextMessage("5126269115",
-                    null,
-                    "I have fallen and needs help, sent by fall assistant app.",
-                    null,
-                    null);
-            Toast.makeText(getApplicationContext(), "Your contacts have been notified",
-                    Toast.LENGTH_LONG).show();
-        } catch (Exception ex) {
-            Toast.makeText(getApplicationContext(),"Your sms has failed...",
-                    Toast.LENGTH_LONG).show();
-            ex.printStackTrace();
-        }
-    }
 
     private class Sample {
         int titleResId;

@@ -22,8 +22,11 @@
     </string-array>
     <string name="drawer_open">Open options navigation drawer</string>
     <string name="drawer_close">Close options navigation drawer</string>
+    <string name="contact_options">Edit Contact information</string>
+    <string name="contact_detail">Contact Phone Number</string>
+    <string name="sensor_timeout">Seconds to wait after fall</string>
     <string name="service_fail">Sensor service failure, please restart the application</string>
-    <string name="action_websearch">Web search</string>
+    <string name="action_feedback">Send Feedback</string>
     <string name="app_not_available">Sorry, there\'s no web browser available</string>
 
     <string name="new_message_notification_title_template">Fall Assistant: %1$s</string>
