@@ -34,6 +34,7 @@ This is a concept file with following syntax for each concept.
 * <Todo>Saves/Restore settings from phone (if available, defaults if not)
 * <Todo>.getLoc() / .getLocRaw to return location data
 * <Todo>eventTriggered() to detect post-fall inactivity
+* <Todo>register for the ACTION_SCREEN_OFF event and then when that fires unregister your sensor listener and then re-register it
 
 #<Todo>(Model) .eventTriggered(sensor.SIG_MOTION):
 * <Todo>-.determineLoc()
