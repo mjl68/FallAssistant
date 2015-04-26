@@ -108,6 +108,9 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     private Location currentLocation;
     private double currentLattitude;
     private double currentLongitude;
+    private String response = "";
+    private Boolean needhelp = false;
+    private Boolean exittimer = false;
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -224,6 +227,9 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
                     ArrayList<String> result = data
                             .getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
                     //set string to text goes here ex. txtSpeechInput.setText(result.get(0));
+                    if((response.contains("help"))||(response.contains("yes"))){
+                        needhelp = true;
+                    }
                 }
                 break;
             }
@@ -418,13 +424,20 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
 
         // set dialog message
         alertDialogBuilder
-                .setMessage(alertMessage)
+                .setMessage(alertMessage + "\nClick yes to exit!")
                 .setCancelable(false)
-                .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) {
                         // if this button is clicked, close
                         // current activity
                         MainActivity.this.finish();
+                    }
+                })
+                .setNegativeButton("No", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        // if this button is clicked, just close
+                        // the dialog box and do nothing
+                        dialog.cancel();
                     }
                 });
 
@@ -460,6 +473,31 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     public void help() {
         speech();
         promptSpeechInput();
+        if(needhelp) {
+
+        }
+        else
+        {
+            exittimer = false;
+            new CountDownTimer(waitSeconds, 1000) {
+
+                @Override
+                public void onTick(long millisUntilFinished) {
+                    // do something after 1s
+                    if (exittimer == true) {
+                        cancel();
+                    }
+                }
+
+                @Override
+                public void onFinish() {
+                    // do something end times 5s
+                    if (exittimer == false) {
+                        sendSmsByManager();
+                    }
+                }
+            }.start();
+        }
     }
 
     @Override
