@@ -418,26 +418,17 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     public void showAlert(String title, String alertMessage) {
         AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(
                 this);
-
         // set title
-        alertDialogBuilder.setTitle("Fall Alert");
-
+        alertDialogBuilder.setTitle("Fall Alert " + title);
         // set dialog message
         alertDialogBuilder
-                .setMessage(alertMessage + "\nClick yes to exit!")
+                .setMessage(alertMessage)
                 .setCancelable(false)
-                .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                .setPositiveButton("OK", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) {
                         // if this button is clicked, close
                         // current activity
                         MainActivity.this.finish();
-                    }
-                })
-                .setNegativeButton("No", new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int id) {
-                        // if this button is clicked, just close
-                        // the dialog box and do nothing
-                        dialog.cancel();
                     }
                 });
 
