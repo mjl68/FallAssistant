@@ -329,6 +329,24 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         }
     }
 
+    public void sendSmsByManager() {
+        try {
+            // Get the default instance of the SmsManager
+            SmsManager smsManager = SmsManager.getDefault();
+            smsManager.sendTextMessage("5126269115",
+                    null,
+                    "I have fallen and needs help, sent by fall assistant app.",
+                    null,
+                    null);
+            Toast.makeText(getApplicationContext(), "Your contacts have been notified",
+                    Toast.LENGTH_LONG).show();
+        } catch (Exception ex) {
+            Toast.makeText(getApplicationContext(),"Your sms has failed...",
+                    Toast.LENGTH_LONG).show();
+            ex.printStackTrace();
+        }
+    }
+
     private class Sample {
         int titleResId;
         int descriptionResId;
