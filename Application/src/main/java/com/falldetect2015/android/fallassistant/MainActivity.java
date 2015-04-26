@@ -43,14 +43,17 @@ import android.widget.BaseAdapter;
 import android.widget.GridView;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.speech.tts.TextToSpeech;
+
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.List;
+import java.util.Locale;
 
-public class MainActivity extends Activity implements AdapterView.OnItemClickListener, SensorEventListener {
+public class MainActivity extends Activity implements AdapterView.OnItemClickListener, SensorEventListener, TextToSpeech.OnInitListener {
     public static final boolean DEBUG = true;
     public static final String PREF_FILE = "prefs";
     public static final String PREF_SERVICE_STATE = "serviceState";
@@ -76,13 +79,18 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     private String captureStateText;
     private Boolean fallDetected = false;
     private Boolean noMovement = true;
+    private TextToSpeech engine;
+    private double pitch=1.0;
+    private double speed=1.0;
+
+
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(com.falldetect2015.android.fallassistant.R.layout.activity_main);
         mSamplesSwitch = false;
         svcRunning = false;
-
+        engine = new TextToSpeech(this, this);
         stopSampling();
         // Prepare list of samples in this dashboard.
         mSamples = new Sample[]{
@@ -320,6 +328,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         try {
             // Get the default instance of the SmsManager
             SmsManager smsManager = SmsManager.getDefault();
+            speech();
             smsManager.sendTextMessage("5126269115",
                     null,
                     "I have fallen and needs help, sent by fall assistant app.",
@@ -390,6 +399,25 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     }
 
 
+
+    @Override
+    public void onInit(int status) {
+        Log.d("Speech", "OnInit - Status ["+status+"]");
+
+        if (status == TextToSpeech.SUCCESS) {
+            Log.d("Speech", "Success!");
+            engine.setLanguage(Locale.US);
+        }
+    }
+
+    private void speech() {
+        engine.setPitch((float) pitch);
+        engine.setSpeechRate((float) speed);
+        engine.speak("Do you Need help?", TextToSpeech.QUEUE_FLUSH, null);
+    }
+
+
+
     private class Sample {
         int titleResId;
         int descriptionResId;
@@ -408,3 +436,4 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         }
     }
 }
+
