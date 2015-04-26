@@ -33,6 +33,7 @@ import android.widget.BaseAdapter;
 import android.widget.GridView;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.telephony.SmsManager;
 
 public class MainActivity extends Activity implements AdapterView.OnItemClickListener {
     private Sample[] mSamples;
@@ -84,6 +85,25 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
                 mGridView.invalidateViews();
             }
 
+        }
+    }
+
+    public void sendSmsByManager() {
+        try {
+            // Get the default instance of the SmsManager
+            SmsManager smsManager = SmsManager.getDefault();
+            //(phone#, , messeage, , ,) todo add geo location and address.
+            smsManager.sendTextMessage("5126269115",
+                    null,
+                    "I have fallen and needs help, sent from fall assistant app.",
+                    null,
+                    null);
+            Toast.makeText(getApplicationContext(), "Your contacts have been notified",
+                    Toast.LENGTH_LONG).show();
+        } catch (Exception ex) {
+            Toast.makeText(getApplicationContext(),"Your sms has failed...",
+                    Toast.LENGTH_LONG).show();
+            ex.printStackTrace();
         }
     }
 
