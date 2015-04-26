@@ -114,8 +114,8 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         setContentView(com.falldetect2015.android.fallassistant.R.layout.activity_main);
         mSamplesSwitch = false;
         svcRunning = false;
-        // engine = new TextToSpeech(this, this);
-        stopService();
+        engine = new TextToSpeech(this, this);
+        stopSampling();
         // Prepare list of samples in this dashboard.
         mSamples = new Sample[]{
                 new Sample(com.falldetect2015.android.fallassistant.R.string.nav_1_titl, com.falldetect2015.android.fallassistant.R.string.nav_1_desc,
@@ -221,6 +221,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
                     ArrayList<String> result = data
                             .getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
                     //set string to text goes here ex. txtSpeechInput.setText(result.get(0));
+                    response = result.get(0);
                     if((response.contains("help"))||(response.contains("yes"))){
                         needhelp = true;
                     }
@@ -236,8 +237,8 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
             i.setClassName( "com.falldetect2015.android.fallassistant","com.falldetect2015.android.fallassistant.faSensorService" );
             stopService( i );
 
-            svcRunning = false;
         }
+        svcRunning = true;
     }
 
     private void startService() {
@@ -281,9 +282,24 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
                 // do something end times 5s
                 if (noMovement == true) {
                     sendSmsByManager();
+                    noMovement = false;
+                } else {
+                    if ((fallDetected == false) && (mAccel > normalThreshold)) {
+                        fallDetected = true;
+                        noMovement = true;
+                        new Thread(new Runnable() {
+                            public void run() {
+                                detectMovement();
+                            }
+                        }).start();
+                    }
                 }
             }
         }.start();
+    }
+
+    // SensorEventListener
+    public void onAccuracyChanged(Sensor sensor, int accuracy) {
     }
 
     public void sendSmsByManager() {
@@ -370,7 +386,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         speech();
         promptSpeechInput();
         if (needhelp) {
-
+            sendSmsByManager();
         } else {
             exittimer = false;
             new CountDownTimer(waitSeconds, 1000) {
@@ -395,8 +411,6 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     }
 
     private void speech() {
-        engine.setPitch((float) pitch);
-        engine.setSpeechRate((float) speed);
         engine.speak("Do you Need help?", TextToSpeech.QUEUE_FLUSH, null);
     }
 
@@ -426,7 +440,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         } else {
             if (position == 2) {
                 // position == 2, sending SMS
-                sendSmsByManager();
+                help();
             }
             if (position == 0) {
                 if (svcRunning == false) {
