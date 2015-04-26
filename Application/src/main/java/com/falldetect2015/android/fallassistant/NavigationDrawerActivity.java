@@ -236,7 +236,7 @@ public class NavigationDrawerActivity extends Activity implements OptionAdapter.
         @Override
         public View onCreateView(LayoutInflater inflater, ViewGroup container,
                                  Bundle savedInstanceState) {
-            View rootView = inflater.inflate(com.falldetect2015.android.fallassistant.R.layout.options, container, false);
+            View rootView = inflater.inflate(com.falldetect2015.android.fallassistant.R.layout.fragment_options, container, false);
             int i = getArguments().getInt(ARG_OPTIONS_NUMBER);
             String optionString = getResources().getStringArray(com.falldetect2015.android.fallassistant.R.array.options_array)[i];
 

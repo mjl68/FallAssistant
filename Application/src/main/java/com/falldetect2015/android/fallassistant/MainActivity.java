@@ -31,8 +31,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.hardware.Sensor;
-import android.hardware.SensorEvent;
-import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.location.Address;
 import android.location.Geocoder;
@@ -63,7 +61,7 @@ import java.util.List;
 import java.util.Locale;
 
 
-public class MainActivity extends Activity implements AdapterView.OnItemClickListener, SensorEventListener, TextToSpeech.OnInitListener {
+public class MainActivity extends Activity implements AdapterView.OnItemClickListener, TextToSpeech.OnInitListener {
     public static final boolean DEBUG = true;
     public static final String PREF_FILE = "prefs";
     public static final String PREF_SERVICE_STATE = "serviceState";
@@ -72,6 +70,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     private final static int fields[] = {};
     private static final String LOG_TAG = "FallAssistant.";
     private static final String SERVICESTARTED_KEY = "serviceStarted";
+    public static Boolean svcRunning;
     private final int REQ_CODE_SPEECH_INPUT = 100;
     public int rate = SensorManager.SENSOR_DELAY_UI;
     private String PREF_CONTACT_NUMBER = "5126269115";
@@ -87,11 +86,10 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     private Sample[] mSamples;
     private GridView mGridView;
     private Boolean mSamplesSwitch = false;
-    private Boolean svcRunning;
     private PowerManager.WakeLock samplingWakeLock;
     private String sensorName = null;
     private boolean captureState = false;
-    private SensorManager sensorManager;
+    private SensorManager mSensorManager;
     private PrintWriter captureFile;
     private long baseMillisec = -1L;
     private long samplesPerSec = 0;
@@ -117,7 +115,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         mSamplesSwitch = false;
         svcRunning = false;
         // engine = new TextToSpeech(this, this);
-        stopSampling();
+        stopService();
         // Prepare list of samples in this dashboard.
         mSamples = new Sample[]{
                 new Sample(com.falldetect2015.android.fallassistant.R.string.nav_1_titl, com.falldetect2015.android.fallassistant.R.string.nav_1_desc,
@@ -171,7 +169,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         if (DEBUG)
             Log.d(LOG_TAG, "onStart");
         if (svcRunning != null && svcRunning == true) {
-            startSampling();
+            startService();
         }
     }
 
@@ -180,8 +178,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         if (DEBUG)
             Log.d(LOG_TAG, "onResume");
         if (svcRunning == true) {
-            stopSampling();
-            startSampling();
+            reStartService();
         }
     }
 
@@ -197,8 +194,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         if (DEBUG)
             Log.d(LOG_TAG, "onPause");
         if (svcRunning == true) {
-            stopSampling();
-            startSampling();
+            reStartService();
         }
     }
 
@@ -207,8 +203,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         if (DEBUG)
             Log.d(LOG_TAG, "onStop");
         if (svcRunning == true) {
-            stopSampling();
-            startSampling();
+            reStartService();
         }
     }
 
@@ -235,103 +230,60 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         }
     }
 
-    private void startSampling() {
-        if (svcRunning)
-            return;
-        if (sensorName != null) {
-            sensorManager =
-                    (SensorManager) getSystemService(SENSOR_SERVICE);
-            List<Sensor> fallassistantSensor = sensorManager.getSensorList(Sensor.TYPE_ALL);
-            Sensor ourSensor = null;
-            for (int i = 0; i < fallassistantSensor.size(); ++i)
-                if (sensorName.equals(fallassistantSensor.get(i).getName())) {
-                    ourSensor = fallassistantSensor.get(i);
-                    break;
-                }
-            if (ourSensor != null) {
-                baseMillisec = -1L;
-                sensorManager.registerListener(
-                        this,
-                        ourSensor,
-                        rate);
-            }
-            // Obtain partial wakelock so that sampling does not stop even if the device goes to sleep
-            PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
-            samplingWakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "SensorMonitor");
-            samplingWakeLock.acquire();
-            Log.d(LOG_TAG, "PARTIAL_WAKE_LOCK acquired");
+    private void stopService() {
+        if( svcRunning ) {
+            Intent i = new Intent();
+            i.setClassName( "com.falldetect2015.android.fallassistant","com.falldetect2015.android.fallassistant.faSensorService" );
+            stopService( i );
 
+            svcRunning = false;
         }
+    }
+
+    private void startService() {
+        stopService();
+        if (svcRunning) {
+            startService();
+            return;
+        }
+        mSensorManager =
+                (SensorManager) getSystemService(SENSOR_SERVICE);
+        Sensor sensor = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        String sensorName = sensor.getName();
+        Intent i = new Intent();
+        i.setClassName("com.falldetect2015.android.fallassistant", "com.falldetect2015.android.fallassistant.faSensorService");
+        i.putExtra("sensorname", sensorName);
+        startService(i);
         svcRunning = true;
     }
 
-    private void stopSampling() {
-        if (svcRunning == false)
-            return;
-        if (sensorManager != null)
-            sensorManager.unregisterListener(this);
-        if (captureFile != null) {
-            captureFile.close();
-            captureFile = null;
-        }
-        if (samplingWakeLock != null) {
-            samplingWakeLock.release();
-            samplingWakeLock = null;
-            Log.d(LOG_TAG, "PARTIAL_WAKE_LOCK released");
-        }
-        svcRunning = false;
+    private void reStartService() {
+        stopService();
+        startService();
     }
 
-    public void onSensorChanged(SensorEvent sensorEvent) {
-        if (sensorEvent.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
-            double threshold = (fallDetected == true) ? fallenThreshold : normalThreshold;
-            mGravity = sensorEvent.values.clone();
-            // Shake detection
-            float x = mGravity[0];
-            lastSensorValues[0] = x;
-            float y = mGravity[1];
-            lastSensorValues[1] = y;
-            float z = mGravity[2];
-            lastSensorValues[2] = y;
-            mAccelLast = mAccelCurrent;
-            mAccelCurrent = (float) Math.sqrt(x * x + y * y + z * z);
-            float delta = mAccelCurrent - mAccelLast;
-            mAccel = mAccel * 0.9f + delta;
-            if (mAccel > threshold) {
-                if ((fallDetected == true) && (mAccel > fallenThreshold)) {
-                    sendSmsByManager();
-                    noMovement = false;
-                } else {
-                    if ((fallDetected == false) && (mAccel > normalThreshold)) {
-                        fallDetected = true;
-                        noMovement = true;
-                        new Thread(new Runnable() {
-                            public void run() {
-                                detectMovement();
-                            }
-                        }).start();
-                    }
+    public void detectMovement() {
+        noMovement = true;
+        new CountDownTimer(waitSeconds, 1000) {
+
+            @Override
+            public void onTick(long millisUntilFinished) {
+                // do something after 1s
+                if (noMovement == false) {
+                    Toast.makeText(getApplicationContext(), "Welcome Back",
+                            Toast.LENGTH_LONG).show();
+                    cancel();
                 }
             }
-            captureFile.println();
-        }
-        long currentMillisec = System.currentTimeMillis();
-        if (baseMillisec < 0) {
-            baseMillisec = currentMillisec;
-            samplesPerSec = 0;
-        } else if ((currentMillisec - baseMillisec) < 1000L)
-            ++samplesPerSec;
-        else {
-            int count = sensorEvent.values.length < fields.length ?
-                    sensorEvent.values.length :
-                    fields.length;
-            samplesPerSec = 1;
-            baseMillisec = currentMillisec;
-        }
-    }
 
-    // SensorEventListener
-    public void onAccuracyChanged(Sensor sensor, int accuracy) {
+            @Override
+            public void onFinish() {
+                // do something end times 5s
+                if (noMovement == true) {
+                    sendSmsByManager();
+                }
+            }
+        }.start();
     }
 
     public void sendSmsByManager() {
@@ -388,30 +340,6 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
             mlocManager.removeUpdates(mLocationListener);
         }
         mlocManager.removeUpdates(mLocationListener);
-    }
-
-    public void detectMovement() {
-        noMovement = true;
-        new CountDownTimer(waitSeconds, 1000) {
-
-            @Override
-            public void onTick(long millisUntilFinished) {
-                // do something after 1s
-                if (noMovement == false) {
-                    Toast.makeText(getApplicationContext(), "Welcome Back",
-                            Toast.LENGTH_LONG).show();
-                    cancel();
-                }
-            }
-
-            @Override
-            public void onFinish() {
-                // do something end times 5s
-                if (noMovement == true) {
-                    sendSmsByManager();
-                }
-            }
-        }.start();
     }
 
     public void showAlert(String title, String alertMessage) {
@@ -504,13 +432,13 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
                 if (svcRunning == false) {
                     mSamples[0].titleResId = com.falldetect2015.android.fallassistant.R.string.nav_1a_titl;
                     mSamples[0].descriptionResId = com.falldetect2015.android.fallassistant.R.string.nav_1a_desc;
-                    startSampling();
+                    startService();
                     svcRunning = true;
                     mGridView.invalidateViews();
                 } else {
                     mSamples[0].titleResId = com.falldetect2015.android.fallassistant.R.string.nav_1_titl;
                     mSamples[0].descriptionResId = com.falldetect2015.android.fallassistant.R.string.nav_1_desc;
-                    stopSampling();
+                    stopService();
                     svcRunning = false;
                     mGridView.invalidateViews();
                 }
@@ -614,6 +542,32 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
             this.intent = intent;
             this.titleResId = titleResId;
             this.descriptionResId = descriptionResId;
+        }
+    }
+
+    class SensorItem {
+        private Sensor sensor;
+        private boolean sampling;
+
+        SensorItem(Sensor sensor) {
+            this.sensor = sensor;
+            this.sampling = false;
+        }
+
+        public String getSensorName() {
+            return sensor.getName();
+        }
+
+        Sensor getSensor() {
+            return sensor;
+        }
+
+        boolean getSampling() {
+            return sampling;
+        }
+
+        void setSampling(boolean sampling) {
+            this.sampling = sampling;
         }
     }
 }

@@ -26,7 +26,8 @@ public class faSensorService extends Service implements SensorEventListener {
     static final String LOG_TAG = "faSensorService";
     static final boolean KEEPAWAKE_HACK = false;
     static final boolean MINIMAL_ENERGY = false;
-    static final long MINIMAL_ENERGY_LOG_PERIOD = 15000L;
+    static final long MINIMAL_ENERGY_LOG_PERIOD = 500L;
+    private static final String SAMPLING_SERVICE_POSITION_KEY = "sensorServicePositon";
     private String sensorName;
     private int rate = SensorManager.SENSOR_DELAY_UI;
     private SensorManager sensorManager;
@@ -38,12 +39,14 @@ public class faSensorService extends Service implements SensorEventListener {
     private long logCounter = 0;
     private PowerManager.WakeLock serviceInProgressWakeLock;
     private Date serviceStartedTimeStamp;
+    private boolean sensorServiceRunning = false;
+    private int sensorServicePosition = 0;
 
     public int onStartCommand(Intent intent, int flags, int startId) {
         super.onStartCommand(intent, flags, startId);
         if (MainActivity.DEBUG)
             Log.d(LOG_TAG, "onStartCommand");
-        stopService();        // just in case the activity-level service management fails
+        stopSensorService();        // just in case the activity-level service management fails
         sensorName = intent.getStringExtra("sensorname");
         if (MainActivity.DEBUG)
             Log.d(LOG_TAG, "sensorName: " + sensorName);
@@ -62,7 +65,7 @@ public class faSensorService extends Service implements SensorEventListener {
         if (KEEPAWAKE_HACK)
             registerReceiver(screenOffBroadcastReceiver, screenOffFilter);
         sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
-        startService();
+        startSensorService();
         if (MainActivity.DEBUG)
             Log.d(LOG_TAG, "onStartCommand ends");
         return START_NOT_STICKY;
@@ -72,7 +75,7 @@ public class faSensorService extends Service implements SensorEventListener {
         super.onDestroy();
         if (MainActivity.DEBUG)
             Log.d(LOG_TAG, "onDestroy");
-        stopService();
+        stopSensorService();
         if (KEEPAWAKE_HACK)
             unregisterReceiver(screenOffBroadcastReceiver);
     }
@@ -81,7 +84,7 @@ public class faSensorService extends Service implements SensorEventListener {
         return null;    // cannot bind
     }
 
-    private void stopService() {
+    private void stopSensorService() {
         if (!serviceStarted)
             return;
         if (generateUserActivityThread != null) {
@@ -112,9 +115,7 @@ public class faSensorService extends Service implements SensorEventListener {
                 "; samples collected: " + logCounter);
     }
 
-    private void startService() {
-        if (serviceStarted)
-            return;
+    private void startSensorService() {
         if (sensorName != null) {
             List<Sensor> sensors = sensorManager.getSensorList(Sensor.TYPE_ALL);
             ourSensor = null;
@@ -126,7 +127,7 @@ public class faSensorService extends Service implements SensorEventListener {
                 }
             if (ourSensor != null) {
                 if (MainActivity.DEBUG)
-                    Log.d(LOG_TAG, "registerListener/SensorService");
+                    Log.d(LOG_TAG, "registerListener/faSensorService");
                 sensorManager.registerListener(
                         this,
                         ourSensor,
@@ -135,7 +136,7 @@ public class faSensorService extends Service implements SensorEventListener {
             serviceStartedTimeStamp = new Date();
             PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
             serviceInProgressWakeLock =
-                    pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "ServiceInProgress");
+                    pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "SamplingInProgress");
             serviceInProgressWakeLock.acquire();
             captureFile = null;
             if (MainActivity.DEBUG)
