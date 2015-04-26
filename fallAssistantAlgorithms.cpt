@@ -60,4 +60,5 @@ This is a concept file with following syntax for each concept.
 * <Todo>-Boolean .callForHelpSMS (string number, helpMsg) { perform contact, ret true = pass, false = fail }
 * <Todo>-Boolean .callForHelpEmail (string email, helpMsg) { perform contact, ret true = pass, false = fail }
 
-
+code examples 
+http://stackoverflow.com/questions/21355889/use-sensors-in-non-activity-class-android-andengine
