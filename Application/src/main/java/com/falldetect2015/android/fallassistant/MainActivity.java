@@ -116,7 +116,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         setContentView(com.falldetect2015.android.fallassistant.R.layout.activity_main);
         mSamplesSwitch = false;
         svcRunning = false;
-        // engine = new TextToSpeech(this, this);
+        engine = new TextToSpeech(this, this);
         stopSampling();
         // Prepare list of samples in this dashboard.
         mSamples = new Sample[]{
@@ -226,6 +226,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
                     ArrayList<String> result = data
                             .getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
                     //set string to text goes here ex. txtSpeechInput.setText(result.get(0));
+                    response = result.get(0);
                     if((response.contains("help"))||(response.contains("yes"))){
                         needhelp = true;
                     }
@@ -438,11 +439,11 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         alertDialog.show();
     }
 
-    public void help() {
+    private void help() {
         speech();
         promptSpeechInput();
         if (needhelp) {
-
+            sendSmsByManager();
         } else {
             exittimer = false;
             new CountDownTimer(waitSeconds, 1000) {
@@ -467,8 +468,6 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     }
 
     private void speech() {
-        engine.setPitch((float) pitch);
-        engine.setSpeechRate((float) speed);
         engine.speak("Do you Need help?", TextToSpeech.QUEUE_FLUSH, null);
     }
 
@@ -498,7 +497,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         } else {
             if (position == 2) {
                 // position == 2, sending SMS
-                sendSmsByManager();
+                help();
             }
             if (position == 0) {
                 if (svcRunning == false) {
