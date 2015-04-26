@@ -179,6 +179,9 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         if (svcRunning == true) {
             reStartService();
         }
+        if (engine != null) {
+            engine = new TextToSpeech(this, this);
+        }
     }
 
     protected void onSaveInstanceState(Bundle outState) {
@@ -203,6 +206,10 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
             Log.d(LOG_TAG, "onStop");
         if (svcRunning == true) {
             reStartService();
+        }
+        if (engine != null) {
+            engine.stop();
+            engine.shutdown();
         }
     }
 
@@ -500,7 +507,6 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
                     "Gps Disabled",
                     Toast.LENGTH_SHORT).show();
         }
-
 
     }/* End of Class MyLocationListener */
 
