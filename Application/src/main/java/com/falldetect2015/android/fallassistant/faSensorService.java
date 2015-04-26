@@ -30,7 +30,7 @@ public class faSensorService extends Service implements SensorEventListener {
     private static final String SAMPLING_SERVICE_POSITION_KEY = "sensorServicePositon";
     private String sensorName;
     private int rate = SensorManager.SENSOR_DELAY_UI;
-    private SensorManager sensorManager;
+    private SensorManager mSensorManager;
     private PrintWriter captureFile;
     private ScreenOffBroadcastReceiver screenOffBroadcastReceiver = null;
     private Sensor ourSensor;
@@ -63,7 +63,7 @@ public class faSensorService extends Service implements SensorEventListener {
         screenOffFilter.addAction(Intent.ACTION_SCREEN_OFF);
         if (KEEPAWAKE_HACK)
             registerReceiver(screenOffBroadcastReceiver, screenOffFilter);
-        sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
+        mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         startSensorService();
         if (MainActivity.DEBUG)
             Log.d(LOG_TAG, "onStartCommand ends");
@@ -77,6 +77,9 @@ public class faSensorService extends Service implements SensorEventListener {
         stopSensorService();
         if (KEEPAWAKE_HACK)
             unregisterReceiver(screenOffBroadcastReceiver);
+        if (mSensorManager != null) {
+            mSensorManager.unregisterListener(this);
+        }
     }
 
     public IBinder onBind(Intent intent) {
@@ -90,10 +93,10 @@ public class faSensorService extends Service implements SensorEventListener {
             generateUserActivityThread.stopThread();
             generateUserActivityThread = null;
         }
-        if (sensorManager != null) {
+        if (mSensorManager != null) {
             if (Config.DEBUG)
                 Log.d(LOG_TAG, "unregisterListener/faSensorService");
-            sensorManager.unregisterListener(this);
+            mSensorManager.unregisterListener(this);
         }
         if (captureFile != null) {
             captureFile.close();
@@ -119,7 +122,7 @@ public class faSensorService extends Service implements SensorEventListener {
             return;
         }
         if (sensorName != null) {
-            List<Sensor> sensors = sensorManager.getSensorList(Sensor.TYPE_ALL);
+            List<Sensor> sensors = mSensorManager.getSensorList(Sensor.TYPE_ALL);
             ourSensor = null;
             ;
             for (int i = 0; i < sensors.size(); ++i)
@@ -130,7 +133,7 @@ public class faSensorService extends Service implements SensorEventListener {
             if (ourSensor != null) {
                 if (MainActivity.DEBUG)
                     Log.d(LOG_TAG, "registerListener/faSensorService");
-                sensorManager.registerListener(
+                mSensorManager.registerListener(
                         this,
                         ourSensor,
                         rate);
@@ -190,7 +193,7 @@ public class faSensorService extends Service implements SensorEventListener {
         public void onReceive(Context context, Intent intent) {
             if (MainActivity.DEBUG)
                 Log.d(LOG_TAG, "onReceive: " + intent);
-            if (sensorManager != null && MainActivity.svcRunning) {
+            if ((mSensorManager != null) && (MainActivity.svcRunning == true)) {
                 if (generateUserActivityThread != null) {
                     generateUserActivityThread.stopThread();
                     generateUserActivityThread = null;

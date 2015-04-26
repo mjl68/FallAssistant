@@ -26,7 +26,7 @@ public class SensorMonitor extends Activity implements SensorEventListener {
     private String sensorName;
     private boolean captureState = false;
     private int rate = SensorManager.SENSOR_DELAY_UI;
-    private SensorManager sensorManager;
+    private SensorManager mSensorManager;
     private PrintWriter captureFile;
     private long baseMillisec = -1L;
     private long samplesPerSec = 0;
@@ -70,7 +70,7 @@ public class SensorMonitor extends Activity implements SensorEventListener {
             captureStateText = "Capture: OFF";
         rate = appPrefs.getInt(
                 MainActivity.PREF_SAMPLING_SPEED,
-                SensorManager.SENSOR_DELAY_UI);
+                mSensorManager.SENSOR_DELAY_UI);
         captureStateText += "; rate: " + getRateName(rate);
         //TextView t = (TextView)findViewById( R.id.capturestate );
         //t.setText( captureStateText );
@@ -113,10 +113,10 @@ public class SensorMonitor extends Activity implements SensorEventListener {
     }
 
     private void stopService() {
-        if (!MainActivity.svcRunning)
+        if (MainActivity.svcRunning == false)
             return;
-        if (sensorManager != null)
-            sensorManager.unregisterListener(this);
+        if (mSensorManager != null)
+            mSensorManager.unregisterListener(this);
         if (captureFile != null) {
             captureFile.close();
             captureFile = null;
@@ -133,9 +133,9 @@ public class SensorMonitor extends Activity implements SensorEventListener {
         if (MainActivity.svcRunning)
             return;
         if (sensorName != null) {
-            sensorManager =
+            mSensorManager =
                     (SensorManager) getSystemService(SENSOR_SERVICE);
-            List<Sensor> sensors = sensorManager.getSensorList(Sensor.TYPE_ALL);
+            List<Sensor> sensors = mSensorManager.getSensorList(Sensor.TYPE_ALL);
             Sensor ourSensor = null;
             for (int i = 0; i < sensors.size(); ++i)
                 if (sensorName.equals(sensors.get(i).getName())) {
@@ -144,7 +144,7 @@ public class SensorMonitor extends Activity implements SensorEventListener {
                 }
             if (ourSensor != null) {
                 baseMillisec = -1L;
-                sensorManager.registerListener(
+                mSensorManager.registerListener(
                         this,
                         ourSensor,
                         rate);
