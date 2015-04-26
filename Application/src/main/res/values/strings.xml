@@ -28,7 +28,7 @@
     <string name="service_fail">Sensor service failure, please restart the application</string>
     <string name="action_feedback">Send Feedback</string>
     <string name="app_not_available">Sorry, there\'s no web browser available</string>
-
+    <string name="fall_message">"I have fallen and needs help, sent by fall assistant app</string>
     <string name="new_message_notification_title_template">Fall Assistant: %1$s</string>
 
     <!-- TODO: remove this placeholder text -->

@@ -31,6 +31,11 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.location.Address;
+import android.location.Geocoder;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.os.PowerManager;
@@ -48,7 +53,9 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.net.URLEncoder;
 import java.util.List;
+import java.util.Locale;
 
 public class MainActivity extends Activity implements AdapterView.OnItemClickListener, SensorEventListener {
     public static final boolean DEBUG = true;
@@ -60,8 +67,16 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     private static final String LOG_TAG = "FallAssistant.";
     private static final String SERVICESTARTED_KEY = "serviceStarted";
     public int rate = SensorManager.SENSOR_DELAY_UI;
+    private String PREF_CONTACT_NUMBER = "5126269115";
     private int defWaitSecs = 20;
-    private int waitSeconds = 0;
+    private int waitSeconds = defWaitSecs;
+    private float normalThreshold = 15;
+    private float fallenThreshold = 2;
+    private float[] lastSensorValues = new float[3];
+    private float[] mGravity;
+    private float mAccel;
+    private float mAccelCurrent;
+    private float mAccelLast;
     private Sample[] mSamples;
     private GridView mGridView;
     private Boolean mSamplesSwitch = false;
@@ -76,6 +91,12 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     private String captureStateText;
     private Boolean fallDetected = false;
     private Boolean noMovement = true;
+    private LocationManager mlocManager = null;
+    private LocationListener mLocationListener = null;
+    private String myGeocodeLocation = null;
+    private Location currentLocation;
+    private double currentLattitude;
+    private double currentLongitude;
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -130,7 +151,6 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         rate = appPrefs.getInt(
                 PREF_SAMPLING_SPEED,
                 SensorManager.SENSOR_DELAY_UI);
-        svcStateText += "; rate: " + getRateName(rate);
     }
 
     protected void onStart() {
@@ -185,11 +205,11 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         if (sensorName != null) {
             sensorManager =
                     (SensorManager) getSystemService(SENSOR_SERVICE);
-            List<Sensor> fallassistant = sensorManager.getSensorList(Sensor.TYPE_ALL);
+            List<Sensor> fallassistantSensor = sensorManager.getSensorList(Sensor.TYPE_ALL);
             Sensor ourSensor = null;
-            for (int i = 0; i < fallassistant.size(); ++i)
-                if (sensorName.equals(fallassistant.get(i).getName())) {
-                    ourSensor = fallassistant.get(i);
+            for (int i = 0; i < fallassistantSensor.size(); ++i)
+                if (sensorName.equals(fallassistantSensor.get(i).getName())) {
+                    ourSensor = fallassistantSensor.get(i);
                     break;
                 }
             if (ourSensor != null) {
@@ -226,103 +246,79 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         svcRunning = false;
     }
 
-    private String getRateName(int sensorRate) {
-        String result = "N/A";
-        switch (sensorRate) {
-            case SensorManager.SENSOR_DELAY_UI:
-                result = "UI";
-                break;
 
-            case SensorManager.SENSOR_DELAY_NORMAL:
-                result = "Normal";
-                break;
-
-            case SensorManager.SENSOR_DELAY_GAME:
-                result = "Game";
-                break;
-
-            case SensorManager.SENSOR_DELAY_FASTEST:
-                result = "Fastest";
-                break;
-        }
-        return result;
-    }
 
     public void onSensorChanged(SensorEvent sensorEvent) {
-        // if Sensor movement > ?? -> noMovement = false;
-        StringBuilder b = new StringBuilder();
-
-        for (int i = 0; i < sensorEvent.values.length; ++i) {
-            if (i > 0)
-                b.append(" , ");
-            b.append(Float.toString(sensorEvent.values[i]));
-        }
-        if (DEBUG)
-            Log.d(LOG_TAG, "onSensorChanged: [" + b + "]");
-        if (captureFile != null) {
-            captureFile.print(Long.toString(sensorEvent.timestamp));
-            for (int i = 0; i < sensorEvent.values.length; ++i) {
-                captureFile.print(",");
-                captureFile.print(Float.toString(sensorEvent.values[i]));
-            }
-            captureFile.println();
-        }
-        long currentMillisec = System.currentTimeMillis();
-        if (baseMillisec < 0) {
-            baseMillisec = currentMillisec;
-            samplesPerSec = 0;
-        } else if ((currentMillisec - baseMillisec) < 1000L)
-            ++samplesPerSec;
-        else {
-            int count = sensorEvent.values.length < fields.length ?
-                    sensorEvent.values.length :
-                    fields.length;
-            samplesPerSec = 1;
-            baseMillisec = currentMillisec;
-        }
-    }
-
-    // SensorEventListener
-    public void onAccuracyChanged(Sensor sensor, int accuracy) {
-    }
-
-    @Override
-    public void onItemClick(AdapterView<?> container, View view, int position, long id) {
-        Boolean serviceState = svcRunning;
-        int x = 0;
-        Boolean pos = position == 2;
-        if (position == 1) {
-            startActivity(mSamples[position].intent);
-        } else {
-            if (position == 2) {
-                // position == 2, sending SMS
-                sendSmsByManager();
-            }
-            if (position == 0) {
-                if (svcRunning == false) {
-                    mSamples[0].titleResId = com.falldetect2015.android.fallassistant.R.string.nav_1a_titl;
-                    mSamples[0].descriptionResId = com.falldetect2015.android.fallassistant.R.string.nav_1a_desc;
-                    svcRunning = true;
-                    // Start Service, init vars, etc
-                    mGridView.invalidateViews();
+        if (sensorEvent.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
+            double threshold = (fallDetected == true) ? fallenThreshold : normalThreshold;
+            mGravity = sensorEvent.values.clone();
+            // Shake detection
+            float x = mGravity[0];
+            lastSensorValues[0] = x;
+            float y = mGravity[1];
+            lastSensorValues[1] = y;
+            float z = mGravity[2];
+            lastSensorValues[2] = y;
+            mAccelLast = mAccelCurrent;
+            mAccelCurrent = (float) Math.sqrt(x * x + y * y + z * z);
+            float delta = mAccelCurrent - mAccelLast;
+            mAccel = mAccel * 0.9f + delta;
+            if (mAccel > threshold) {
+                if ((fallDetected == true) && (mAccel > fallenThreshold)) {
+                    sendSmsByManager();
                 } else {
-                    mSamples[0].titleResId = com.falldetect2015.android.fallassistant.R.string.nav_1_titl;
-                    mSamples[0].descriptionResId = com.falldetect2015.android.fallassistant.R.string.nav_1_desc;
-                    svcRunning = false;
-                    // Stop Service, zero vars, etc
-                    mGridView.invalidateViews();
+                    if ((fallDetected == false) && (mAccel > normalThreshold)) {
+                        fallDetected = true;
+                        new Thread(new Runnable() {
+                            public void run() {
+                                detectMovement();
+                            }
+                        }).start();
+                    }
                 }
             }
         }
     }
 
+    // SensorEventListener
+    public void onAccuracyChanged(Sensor sensor, int accuracy) {
+
+    }
+
     public void sendSmsByManager() {
         try {
             // Get the default instance of the SmsManager
+            if (mlocManager == null) {
+                mlocManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+            }
+            mLocationListener = new myLocationListener();
+            mlocManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, mLocationListener);
+            //getAddressFromLocation(mLastKownLocation, this, new GeocoderHandler());
+
+            Geocoder gc = new Geocoder(this, Locale.getDefault());
+            try {
+                List<Address> addresses = gc.getFromLocation(currentLattitude,
+                        currentLongitude, 1);
+                StringBuilder sb = new StringBuilder();
+                if (addresses.size() > 0) {
+                    Address address = addresses.get(0);
+                    for (int i = 0; i < address.getMaxAddressLineIndex(); i++)
+                        sb.append(address.getAddressLine(i)).append("\n");
+                    sb.append(address.getLocality()).append("\n");
+                    sb.append(address.getPostalCode()).append("\n");
+                    sb.append(address.getCountryName());
+                }
+            } catch (IOException e) {
+                Toast.makeText(getApplicationContext(), "Impossible to connect to Geocoder",
+                        Toast.LENGTH_LONG).show();
+                e.printStackTrace();
+            }
+
+            String helpMessage = com.falldetect2015.android.fallassistant.R.string.fall_message + " http://maps.google.com/maps?q=" + URLEncoder.encode(myGeocodeLocation, "utf-8");
             SmsManager smsManager = SmsManager.getDefault();
-            smsManager.sendTextMessage("5126269115",
+            smsManager.sendTextMessage(PREF_CONTACT_NUMBER,
                     null,
-                    "I have fallen and needs help, sent by fall assistant app.",
+                    helpMessage,
                     null,
                     null);
             Toast.makeText(getApplicationContext(), "Your contacts have been notified",
@@ -331,7 +327,11 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
             Toast.makeText(getApplicationContext(), "Your sms has failed...",
                     Toast.LENGTH_LONG).show();
             ex.printStackTrace();
+
+            mlocManager.removeUpdates(mLocationListener);
         }
+
+        mlocManager.removeUpdates(mLocationListener);
     }
 
     public void detectMovement() {
@@ -357,6 +357,78 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
 
         }.start();
     }
+
+    @Override
+    public void onItemClick(AdapterView<?> container, View view, int position, long id) {
+        Boolean serviceState = svcRunning;
+        int x = 0;
+        Boolean pos = position == 2;
+        if (position == 1) {
+            startActivity(mSamples[position].intent);
+        } else {
+            if (position == 2) {
+                // position == 2, sending SMS
+                sendSmsByManager();
+            }
+            if (position == 0) {
+                if (svcRunning == false) {
+                    mSamples[0].titleResId = com.falldetect2015.android.fallassistant.R.string.nav_1a_titl;
+                    mSamples[0].descriptionResId = com.falldetect2015.android.fallassistant.R.string.nav_1a_desc;
+                    startSampling();
+                    svcRunning = true;
+                    mGridView.invalidateViews();
+                } else {
+                    mSamples[0].titleResId = com.falldetect2015.android.fallassistant.R.string.nav_1_titl;
+                    mSamples[0].descriptionResId = com.falldetect2015.android.fallassistant.R.string.nav_1_desc;
+                    stopSampling();
+                    svcRunning = false;
+                    mGridView.invalidateViews();
+                }
+            }
+        }
+    }
+
+    public void showToast(CharSequence message) {
+        int duration = Toast.LENGTH_SHORT;
+
+        Toast toast = Toast.makeText(getApplicationContext(), message, duration);
+        toast.show();
+    }
+
+    public class myLocationListener implements LocationListener
+
+    {
+        @Override
+        public void onLocationChanged(Location loc) {
+            currentLocation = loc;
+            loc.getLatitude();
+            loc.getLongitude();
+            showToast("Location now: " + Double.toString(loc.getLatitude()) + ", " + Double.toString(loc.getLongitude()));
+        }
+
+        @Override
+        public void onStatusChanged(String provider, int status, Bundle extras) {
+
+        }
+
+        @Override
+        public void onProviderEnabled(String provider) {
+            Toast.makeText(getApplicationContext(),
+                    "Gps Enabled",
+                    Toast.LENGTH_SHORT).show();
+        }
+
+        @Override
+        public void onProviderDisabled(String provider) {
+            Toast.makeText(getApplicationContext(),
+                    "Gps Disabled",
+                    Toast.LENGTH_SHORT).show();
+        }
+
+
+    }/* End of Class MyLocationListener */
+
+
 
     private class SampleAdapter extends BaseAdapter {
         @Override
@@ -388,7 +460,6 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
             return convertView;
         }
     }
-
 
     private class Sample {
         int titleResId;
