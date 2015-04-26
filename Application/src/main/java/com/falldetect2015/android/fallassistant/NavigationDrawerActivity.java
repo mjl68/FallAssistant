@@ -17,7 +17,7 @@
  * - Displays options interface(s) to users
  * - Calls to faModel object to update/retrieve sensor related settings
  * - <Todo>Calls to <Controller> to update/retrieve contact related settings
- * - <Todo>Calls to <Controller> object to perform actual "SMS / Email"
+ * - <Todo>Calls to perform actual " Email"
  *
  */
 
@@ -112,13 +112,13 @@ public class NavigationDrawerActivity extends Activity implements OptionAdapter.
                 com.falldetect2015.android.fallassistant.R.string.drawer_open,  /* "open drawer" description for accessibility */
                 com.falldetect2015.android.fallassistant.R.string.drawer_close  /* "close drawer" description for accessibility */
         ) {
-            public void onDrawerClosed(View view) {
-                getActionBar().setTitle(mTitle);
+            public void onDrawerOpened(View drawerView) {
+                getActionBar().setTitle(mDrawerTitle);
                 invalidateOptionsMenu(); // creates call to onPrepareOptionsMenu()
             }
 
-            public void onDrawerOpened(View drawerView) {
-                getActionBar().setTitle(mDrawerTitle);
+            public void onDrawerClosed(View view) {
+                getActionBar().setTitle(mTitle);
                 invalidateOptionsMenu(); // creates call to onPrepareOptionsMenu()
             }
         };
@@ -129,6 +129,38 @@ public class NavigationDrawerActivity extends Activity implements OptionAdapter.
         }
     }
 
+    private void selectItem(int position) {
+        // update the main content by replacing fragments
+        Fragment fragment = OptionsFragment.newInstance(position);
+
+        FragmentManager fragmentManager = getFragmentManager();
+        FragmentTransaction ft = fragmentManager.beginTransaction();
+        ft.replace(com.falldetect2015.android.fallassistant.R.id.content_frame, fragment);
+        ft.commit();
+
+        // update selected item title, then close the drawer
+        setTitle(mOptionTitles[position]);
+        mDrawerLayout.closeDrawer(mDrawerList);
+    }
+
+    /**
+     * When using the ActionBarDrawerToggle, you must call it during
+     * onPostCreate() and onConfigurationChanged()...
+     */
+
+    @Override
+    protected void onPostCreate(Bundle savedInstanceState) {
+        super.onPostCreate(savedInstanceState);
+        // Sync the toggle state after onRestoreInstanceState has occurred.
+        mDrawerToggle.syncState();
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        // Pass any configuration change to the drawer toggls
+        mDrawerToggle.onConfigurationChanged(newConfig);
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -171,49 +203,16 @@ public class NavigationDrawerActivity extends Activity implements OptionAdapter.
         }
     }
 
-    /* The click listener for RecyclerView in the navigation drawer */
-    @Override
-    public void onClick(View view, int position) {
-        selectItem(position);
-    }
-
-    private void selectItem(int position) {
-        // update the main content by replacing fragments
-        Fragment fragment = OptionsFragment.newInstance(position);
-
-        FragmentManager fragmentManager = getFragmentManager();
-        FragmentTransaction ft = fragmentManager.beginTransaction();
-        ft.replace(com.falldetect2015.android.fallassistant.R.id.content_frame, fragment);
-        ft.commit();
-
-        // update selected item title, then close the drawer
-        setTitle(mOptionTitles[position]);
-        mDrawerLayout.closeDrawer(mDrawerList);
-    }
-
     @Override
     public void setTitle(CharSequence title) {
         mTitle = title;
         getActionBar().setTitle(mTitle);
     }
 
-    /**
-     * When using the ActionBarDrawerToggle, you must call it during
-     * onPostCreate() and onConfigurationChanged()...
-     */
-
+    /* The click listener for RecyclerView in the navigation drawer */
     @Override
-    protected void onPostCreate(Bundle savedInstanceState) {
-        super.onPostCreate(savedInstanceState);
-        // Sync the toggle state after onRestoreInstanceState has occurred.
-        mDrawerToggle.syncState();
-    }
-
-    @Override
-    public void onConfigurationChanged(Configuration newConfig) {
-        super.onConfigurationChanged(newConfig);
-        // Pass any configuration change to the drawer toggls
-        mDrawerToggle.onConfigurationChanged(newConfig);
+    public void onClick(View view, int position) {
+        selectItem(position);
     }
 
     /**
