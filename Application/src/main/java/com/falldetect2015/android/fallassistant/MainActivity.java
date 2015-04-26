@@ -70,7 +70,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     private final static int fields[] = {};
     private static final String LOG_TAG = "FallAssistant.";
     private static final String SERVICESTARTED_KEY = "serviceStarted";
-    public static Boolean svcRunning;
+    public static Boolean svcRunning = false;
     private final int REQ_CODE_SPEECH_INPUT = 100;
     public int rate = SensorManager.SENSOR_DELAY_UI;
     private String PREF_CONTACT_NUMBER = "5126269115";
@@ -113,9 +113,8 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         super.onCreate(savedInstanceState);
         setContentView(com.falldetect2015.android.fallassistant.R.layout.activity_main);
         mSamplesSwitch = false;
-        svcRunning = false;
         engine = new TextToSpeech(this, this);
-        stopSampling();
+        stopSensorService();
         // Prepare list of samples in this dashboard.
         mSamples = new Sample[]{
                 new Sample(com.falldetect2015.android.fallassistant.R.string.nav_1_titl, com.falldetect2015.android.fallassistant.R.string.nav_1_desc,
@@ -169,7 +168,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         if (DEBUG)
             Log.d(LOG_TAG, "onStart");
         if (svcRunning != null && svcRunning == true) {
-            startService();
+            startSensorService();
         }
     }
 
@@ -231,22 +230,13 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         }
     }
 
-    private void stopService() {
-        if( svcRunning ) {
-            Intent i = new Intent();
-            i.setClassName( "com.falldetect2015.android.fallassistant","com.falldetect2015.android.fallassistant.faSensorService" );
-            stopService( i );
-
-        }
-        svcRunning = true;
+    private void reStartService() {
+        stopSensorService();
+        startSensorService();
     }
 
-    private void startService() {
-        stopService();
-        if (svcRunning) {
-            startService();
-            return;
-        }
+    private void startSensorService() {
+        stopSensorService();
         mSensorManager =
                 (SensorManager) getSystemService(SENSOR_SERVICE);
         Sensor sensor = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
@@ -258,9 +248,13 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         svcRunning = true;
     }
 
-    private void reStartService() {
-        stopService();
-        startService();
+    private void stopSensorService() {
+        if (svcRunning) {
+            Intent i = new Intent();
+            i.setClassName("com.falldetect2015.android.fallassistant", "com.falldetect2015.android.fallassistant.faSensorService");
+            stopService(i);
+        }
+        svcRunning = false;
     }
 
     public void detectMovement() {
@@ -300,6 +294,84 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
 
     // SensorEventListener
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
+    }
+
+    @Override
+    public void onItemClick(AdapterView<?> container, View view, int position, long id) {
+        Boolean serviceState = svcRunning;
+        int x = 0;
+        Boolean pos = position == 2;
+        if (position == 1) {
+            startActivity(mSamples[position].intent);
+        } else {
+            if (position == 2) {
+                // position == 2, sending SMS
+                help();
+            }
+            if (position == 0) {
+                if (svcRunning == false) {
+                    mSamples[0].titleResId = com.falldetect2015.android.fallassistant.R.string.nav_1a_titl;
+                    mSamples[0].descriptionResId = com.falldetect2015.android.fallassistant.R.string.nav_1a_desc;
+                    startSensorService();
+                    svcRunning = true;
+                    mGridView.invalidateViews();
+                } else {
+                    mSamples[0].titleResId = com.falldetect2015.android.fallassistant.R.string.nav_1_titl;
+                    mSamples[0].descriptionResId = com.falldetect2015.android.fallassistant.R.string.nav_1_desc;
+                    stopSensorService();
+                    svcRunning = false;
+                    mGridView.invalidateViews();
+                }
+            }
+        }
+    }
+
+    public void help() {
+        speech();
+        promptSpeechInput();
+        if (needhelp) {
+            sendSmsByManager();
+        } else {
+            exittimer = false;
+            new CountDownTimer(waitSeconds, 1000) {
+
+                @Override
+                public void onTick(long millisUntilFinished) {
+                    // do something after 1s
+                    if (exittimer == true) {
+                        cancel();
+                    }
+                }
+
+                @Override
+                public void onFinish() {
+                    // do something end times 5s
+                    if (exittimer == false) {
+                        sendSmsByManager();
+                    }
+                }
+            }.start();
+        }
+    }
+
+    private void speech() {
+        engine.speak("Do you Need help?", TextToSpeech.QUEUE_FLUSH, null);
+    }
+
+    private void promptSpeechInput() {
+        Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault());
+        intent.putExtra(RecognizerIntent.EXTRA_PROMPT,
+                getString(R.string.speech_prompt));
+        try {
+            startActivityForResult(intent, REQ_CODE_SPEECH_INPUT);
+        } catch (ActivityNotFoundException a) {
+            Toast.makeText(getApplicationContext(),
+                    getString(R.string.speech_not_supported),
+                    Toast.LENGTH_SHORT).show();
+        }
     }
 
     public void sendSmsByManager() {
@@ -380,84 +452,6 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
 
         // show it
         alertDialog.show();
-    }
-
-    public void help() {
-        speech();
-        promptSpeechInput();
-        if (needhelp) {
-            sendSmsByManager();
-        } else {
-            exittimer = false;
-            new CountDownTimer(waitSeconds, 1000) {
-
-                @Override
-                public void onTick(long millisUntilFinished) {
-                    // do something after 1s
-                    if (exittimer == true) {
-                        cancel();
-                    }
-                }
-
-                @Override
-                public void onFinish() {
-                    // do something end times 5s
-                    if (exittimer == false) {
-                        sendSmsByManager();
-                    }
-                }
-            }.start();
-        }
-    }
-
-    private void speech() {
-        engine.speak("Do you Need help?", TextToSpeech.QUEUE_FLUSH, null);
-    }
-
-    private void promptSpeechInput() {
-        Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
-        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
-        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault());
-        intent.putExtra(RecognizerIntent.EXTRA_PROMPT,
-                getString(R.string.speech_prompt));
-        try {
-            startActivityForResult(intent, REQ_CODE_SPEECH_INPUT);
-        } catch (ActivityNotFoundException a) {
-            Toast.makeText(getApplicationContext(),
-                    getString(R.string.speech_not_supported),
-                    Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    @Override
-    public void onItemClick(AdapterView<?> container, View view, int position, long id) {
-        Boolean serviceState = svcRunning;
-        int x = 0;
-        Boolean pos = position == 2;
-        if (position == 1) {
-            startActivity(mSamples[position].intent);
-        } else {
-            if (position == 2) {
-                // position == 2, sending SMS
-                help();
-            }
-            if (position == 0) {
-                if (svcRunning == false) {
-                    mSamples[0].titleResId = com.falldetect2015.android.fallassistant.R.string.nav_1a_titl;
-                    mSamples[0].descriptionResId = com.falldetect2015.android.fallassistant.R.string.nav_1a_desc;
-                    startService();
-                    svcRunning = true;
-                    mGridView.invalidateViews();
-                } else {
-                    mSamples[0].titleResId = com.falldetect2015.android.fallassistant.R.string.nav_1_titl;
-                    mSamples[0].descriptionResId = com.falldetect2015.android.fallassistant.R.string.nav_1_desc;
-                    stopService();
-                    svcRunning = false;
-                    mGridView.invalidateViews();
-                }
-            }
-        }
     }
 
     public void showToast(CharSequence message) {

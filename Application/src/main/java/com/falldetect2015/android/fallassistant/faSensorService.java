@@ -32,7 +32,6 @@ public class faSensorService extends Service implements SensorEventListener {
     private int rate = SensorManager.SENSOR_DELAY_UI;
     private SensorManager sensorManager;
     private PrintWriter captureFile;
-    private boolean serviceStarted = false;
     private ScreenOffBroadcastReceiver screenOffBroadcastReceiver = null;
     private Sensor ourSensor;
     private GenerateUserActivityThread generateUserActivityThread = null;
@@ -81,11 +80,11 @@ public class faSensorService extends Service implements SensorEventListener {
     }
 
     public IBinder onBind(Intent intent) {
-        return null;    // cannot bind
-    }
+        return null;
+    }   // cannot bind
 
     private void stopSensorService() {
-        if (!serviceStarted)
+        if (!MainActivity.svcRunning)
             return;
         if (generateUserActivityThread != null) {
             generateUserActivityThread.stopThread();
@@ -100,7 +99,7 @@ public class faSensorService extends Service implements SensorEventListener {
             captureFile.close();
             captureFile = null;
         }
-        serviceStarted = false;
+        MainActivity.svcRunning = false;
         serviceInProgressWakeLock.release();
         serviceInProgressWakeLock = null;
         Date serviceStoppedTimeStamp = new Date();
@@ -116,6 +115,9 @@ public class faSensorService extends Service implements SensorEventListener {
     }
 
     private void startSensorService() {
+        if ((MainActivity.svcRunning != null) && (MainActivity.svcRunning == true)) {
+            return;
+        }
         if (sensorName != null) {
             List<Sensor> sensors = sensorManager.getSensorList(Sensor.TYPE_ALL);
             ourSensor = null;
@@ -147,7 +149,7 @@ public class faSensorService extends Service implements SensorEventListener {
             } catch (IOException ex) {
                 Log.e(LOG_TAG, ex.getMessage(), ex);
             }
-            serviceStarted = true;
+            MainActivity.svcRunning = true;
         }
     }
 
@@ -188,7 +190,7 @@ public class faSensorService extends Service implements SensorEventListener {
         public void onReceive(Context context, Intent intent) {
             if (MainActivity.DEBUG)
                 Log.d(LOG_TAG, "onReceive: " + intent);
-            if (sensorManager != null && serviceStarted) {
+            if (sensorManager != null && MainActivity.svcRunning) {
                 if (generateUserActivityThread != null) {
                     generateUserActivityThread.stopThread();
                     generateUserActivityThread = null;
