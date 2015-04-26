@@ -352,14 +352,19 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
                     sb.append(address.getLocality()).append("\n");
                     sb.append(address.getPostalCode()).append("\n");
                     sb.append(address.getCountryName());
+                    myGeocodeLocation = sb.toString();
                 }
             } catch (IOException e) {
                 Toast.makeText(getApplicationContext(), "Cant connect to Geocoder",
                         Toast.LENGTH_LONG).show();
                 e.printStackTrace();
             }
-            showAlert("GeoCode", myGeocodeLocation);
-            String helpMessage = com.falldetect2015.android.fallassistant.R.string.fall_message + " http://maps.google.com/maps?q=" + URLEncoder.encode(myGeocodeLocation, "utf-8");
+
+            if (myGeocodeLocation == null) {
+                showAlert("GeoCode", myGeocodeLocation);
+                myGeocodeLocation = String.valueOf(currentLattitude) + " " + String.valueOf(currentLongitude);
+            }
+            String helpMessage = "I have fallen and need help, sent by fall assistant app" + " http://maps.google.com/maps?q=" + URLEncoder.encode(myGeocodeLocation, "utf-8");
             SmsManager smsManager = SmsManager.getDefault();
             speech();
             promptSpeechInput();
