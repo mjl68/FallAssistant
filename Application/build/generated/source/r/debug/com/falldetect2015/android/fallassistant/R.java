@@ -1662,6 +1662,8 @@ containing a value of this type.
         public static final int alertTitle=0x7f090030;
         public static final int always=0x7f090016;
         public static final int beginning=0x7f090013;
+        public static final int button=0x7f090056;
+        public static final int button2=0x7f090058;
         public static final int buttonPanel=0x7f090036;
         public static final int checkbox=0x7f090038;
         public static final int collapseActionView=0x7f090017;
@@ -1802,20 +1804,19 @@ containing a value of this type.
         public static final int contact_options=0x7f0b0017;
         public static final int drawer_close=0x7f0b0018;
         public static final int drawer_open=0x7f0b0019;
-        public static final int fall_message=0x7f0b001a;
-        public static final int intro_message=0x7f0b001b;
-        public static final int nav_1_desc=0x7f0b001c;
-        public static final int nav_1_titl=0x7f0b001d;
-        public static final int nav_1a_desc=0x7f0b001e;
-        public static final int nav_1a_titl=0x7f0b001f;
-        public static final int nav_2_desc=0x7f0b0020;
-        public static final int nav_2_titl=0x7f0b0021;
-        public static final int nav_3_desc=0x7f0b0022;
-        public static final int nav_3_titl=0x7f0b0023;
-        public static final int new_message_notification_title_template=0x7f0b0024;
-        public static final int notification_text_service_up=0x7f0b0025;
-        public static final int sensor_timeout=0x7f0b0026;
-        public static final int service_fail=0x7f0b0027;
+        public static final int intro_message=0x7f0b001a;
+        public static final int nav_1_desc=0x7f0b001b;
+        public static final int nav_1_titl=0x7f0b001c;
+        public static final int nav_1a_desc=0x7f0b001d;
+        public static final int nav_1a_titl=0x7f0b001e;
+        public static final int nav_2_desc=0x7f0b001f;
+        public static final int nav_2_titl=0x7f0b0020;
+        public static final int nav_3_desc=0x7f0b0021;
+        public static final int nav_3_titl=0x7f0b0022;
+        public static final int new_message_notification_title_template=0x7f0b0023;
+        public static final int notification_text_service_up=0x7f0b0024;
+        public static final int sensor_timeout=0x7f0b0025;
+        public static final int service_fail=0x7f0b0026;
     }
     public static final class style {
         public static final int AlertDialog_AppCompat=0x7f0c0000;

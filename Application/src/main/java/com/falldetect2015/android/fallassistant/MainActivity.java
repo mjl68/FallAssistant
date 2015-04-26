@@ -48,6 +48,9 @@ import android.widget.BaseAdapter;
 import android.widget.GridView;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.speech.tts.TextToSpeech;
+import android.speech.RecognizerIntent;
+import android.content.ActivityNotFoundException;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -56,8 +59,10 @@ import java.io.PrintWriter;
 import java.net.URLEncoder;
 import java.util.List;
 import java.util.Locale;
+import java.util.ArrayList;
 
-public class MainActivity extends Activity implements AdapterView.OnItemClickListener, SensorEventListener {
+
+public class MainActivity extends Activity implements AdapterView.OnItemClickListener, SensorEventListener, TextToSpeech.OnInitListener {
     public static final boolean DEBUG = true;
     public static final String PREF_FILE = "prefs";
     public static final String PREF_SERVICE_STATE = "serviceState";
@@ -67,7 +72,6 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     private static final String LOG_TAG = "FallAssistant.";
     private static final String SERVICESTARTED_KEY = "serviceStarted";
     public int rate = SensorManager.SENSOR_DELAY_UI;
-    private String PREF_CONTACT_NUMBER = "5126269115";
     private int defWaitSecs = 20;
     private int waitSeconds = defWaitSecs;
     private float normalThreshold = 15;
@@ -91,6 +95,10 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     private String captureStateText;
     private Boolean fallDetected = false;
     private Boolean noMovement = true;
+    private TextToSpeech engine;
+    private double pitch=1.0;
+    private double speed=1.0;
+    private final int REQ_CODE_SPEECH_INPUT = 100;
     private LocationManager mlocManager = null;
     private LocationListener mLocationListener = null;
     private String myGeocodeLocation = null;
@@ -103,7 +111,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         setContentView(com.falldetect2015.android.fallassistant.R.layout.activity_main);
         mSamplesSwitch = false;
         svcRunning = false;
-
+        engine = new TextToSpeech(this, this);
         stopSampling();
         // Prepare list of samples in this dashboard.
         mSamples = new Sample[]{
@@ -151,6 +159,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         rate = appPrefs.getInt(
                 PREF_SAMPLING_SPEED,
                 SensorManager.SENSOR_DELAY_UI);
+        svcStateText += "; rate: " + getRateName(rate);
     }
 
     protected void onStart() {
@@ -277,14 +286,60 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
                     }
                 }
             }
+            captureFile.println();
+        }
+        long currentMillisec = System.currentTimeMillis();
+        if (baseMillisec < 0) {
+            baseMillisec = currentMillisec;
+            samplesPerSec = 0;
+        } else if ((currentMillisec - baseMillisec) < 1000L)
+            ++samplesPerSec;
+        else {
+            int count = sensorEvent.values.length < fields.length ?
+                    sensorEvent.values.length :
+                    fields.length;
+            samplesPerSec = 1;
+            baseMillisec = currentMillisec;
         }
     }
 
     // SensorEventListener
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
-
     }
 
+    @Override
+    public void onItemClick(AdapterView<?> container, View view, int position, long id) {
+        Boolean serviceState = svcRunning;
+        int x = 0;
+        Boolean pos = position == 2;
+        if (position == 1) {
+            startActivity(mSamples[position].intent);
+        } else {
+            if (position == 2) {
+                // position == 2, sending SMS
+                sendSmsByManager();
+            }
+            if (position == 0) {
+                if (svcRunning == false) {
+                    mSamples[0].titleResId = com.falldetect2015.android.fallassistant.R.string.nav_1a_titl;
+                    mSamples[0].descriptionResId = com.falldetect2015.android.fallassistant.R.string.nav_1a_desc;
+                    svcRunning = true;
+                    // Start Service, init vars, etc
+                    mGridView.invalidateViews();
+                } else {
+                    mSamples[0].titleResId = com.falldetect2015.android.fallassistant.R.string.nav_1_titl;
+                    mSamples[0].descriptionResId = com.falldetect2015.android.fallassistant.R.string.nav_1_desc;
+                    svcRunning = false;
+                    // Stop Service, zero vars, etc
+                    mGridView.invalidateViews();
+                }
+            }
+        }
+    }
+    public void help () {
+        speech();
+        promptSpeechInput();
+    }
     public void sendSmsByManager() {
         try {
             // Get the default instance of the SmsManager
@@ -316,6 +371,9 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
 
             String helpMessage = com.falldetect2015.android.fallassistant.R.string.fall_message + " http://maps.google.com/maps?q=" + URLEncoder.encode(myGeocodeLocation, "utf-8");
             SmsManager smsManager = SmsManager.getDefault();
+            speech();
+            promptSpeechInput();
+            smsManager.sendTextMessage("5126269115",
             smsManager.sendTextMessage(PREF_CONTACT_NUMBER,
                     null,
                     helpMessage,
@@ -458,6 +516,61 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
             ((TextView) convertView.findViewById(android.R.id.text2)).setText(
                     mSamples[position].descriptionResId);
             return convertView;
+        }
+    }
+
+
+
+    @Override
+    public void onInit(int status) {
+        Log.d("Speech", "OnInit - Status ["+status+"]");
+
+        if (status == TextToSpeech.SUCCESS) {
+            Log.d("Speech", "Success!");
+            engine.setLanguage(Locale.US);
+        }
+    }
+
+    private void speech() {
+        engine.setPitch((float) pitch);
+        engine.setSpeechRate((float) speed);
+        engine.speak("Do you Need help?", TextToSpeech.QUEUE_FLUSH, null);
+    }
+
+    private void promptSpeechInput() {
+        Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault());
+        intent.putExtra(RecognizerIntent.EXTRA_PROMPT,
+                getString(R.string.speech_prompt));
+        try {
+            startActivityForResult(intent, REQ_CODE_SPEECH_INPUT);
+        } catch (ActivityNotFoundException a) {
+            Toast.makeText(getApplicationContext(),
+                    getString(R.string.speech_not_supported),
+                    Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    /**
+     * Receiving speech input
+     * */
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        switch (requestCode) {
+            case REQ_CODE_SPEECH_INPUT: {
+                if (resultCode == RESULT_OK && null != data) {
+
+                    ArrayList<String> result = data
+                            .getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
+                    //set string to text goes here ex. txtSpeechInput.setText(result.get(0));
+                }
+                break;
+            }
+
         }
     }
 
