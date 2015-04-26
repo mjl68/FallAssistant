@@ -335,30 +335,48 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
 
     public void help() {
         speech();
-        promptSpeechInput();
-        if (needhelp) {
-            sendSmsByManager();
-        } else {
-            exittimer = false;
-            new CountDownTimer(waitSeconds, 1000) {
+        helpalert("Are you ok?", "Are you ok? Do you need help?");
+        new CountDownTimer(waitSeconds, 1000) {
+            @Override
+            public void onTick(long millisUntilFinished) {
 
-                @Override
-                public void onTick(long millisUntilFinished) {
-                    // do something after 1s
-                    if (exittimer == true) {
-                        cancel();
-                    }
-                }
+            }
 
-                @Override
-                public void onFinish() {
-                    // do something end times 5s
-                    if (exittimer == false) {
-                        sendSmsByManager();
-                    }
+            @Override
+            public void onFinish() {
+                needhelp = false;
+                promptSpeechInput();
+                if (needhelp) {
+                    sendSmsByManager();
+                } else {
+                    exittimer = false;
+                    new CountDownTimer(60000, 1000) {
+
+                        @Override
+                        public void onTick(long millisUntilFinished) {
+                            // do something after 1s
+                            if (exittimer == true) {
+                                cancel();
+                            }
+                            if (needhelp == true) {
+                                sendSmsByManager();
+                                cancel();
+                            }
+                        }
+
+                        @Override
+                        public void onFinish() {
+                            // do something end times 5s
+                            if (exittimer == false) {
+                                sendSmsByManager();
+                            }
+                        }
+                    }.start();
                 }
-            }.start();
-        }
+            }
+
+        }.start();
+
     }
 
     private void speech() {
@@ -460,7 +478,36 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         // show it
         alertDialog.show();
     }
+    public void helpalert(String title, String alertMessage) {
+        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(
+                this);
+        // set title
+        alertDialogBuilder.setTitle("Fall Alert " + title);
+        // set dialog message
+        alertDialogBuilder
+                .setMessage(alertMessage)
+                .setCancelable(false)
+                .setPositiveButton("Yes I need help", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        // if this button is clicked, close
+                        // current activity
+                        needhelp = true;
+                    }
+                })
+                .setNegativeButton("No I don't need help", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                    // if this button is clicked, close
+                    // current activity
+                     exittimer = true;
+                    }
+                 });
 
+        // create alert dialog
+        AlertDialog alertDialog = alertDialogBuilder.create();
+
+        // show it
+        alertDialog.show();
+    }
     public void showToast(CharSequence message) {
         int duration = Toast.LENGTH_SHORT;
 
