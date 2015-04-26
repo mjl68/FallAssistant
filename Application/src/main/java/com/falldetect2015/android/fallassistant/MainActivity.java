@@ -16,7 +16,7 @@
  * (View) MainActivity
  * - Displays Home screen to users
  * - Calls to faModel object to start/stop sensor service
- * - <Todo>Calls to perform actual "Email"
+ * - <Todo>Calls to <Controller> object to perform actual "SMS / Email"
  * http://examples.javacodegeeks.com/android/core/hardware/sensor/android-accelerometer-example/
  */
 
@@ -24,10 +24,8 @@ package com.falldetect2015.android.fallassistant;
 
 
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.hardware.Sensor;
@@ -100,8 +98,8 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     private Boolean fallDetected = false;
     private Boolean noMovement = true;
     private TextToSpeech engine;
-    private double pitch = 1.0;
-    private double speed = 1.0;
+    private double pitch=1.0;
+    private double speed=1.0;
     private LocationManager mlocManager = null;
     private LocationListener mLocationListener = null;
     private String myGeocodeLocation = null;
@@ -147,7 +145,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         Boolean svcState = appPrefs.getBoolean(PREF_SERVICE_STATE, false);
         waitSeconds = appPrefs.getInt(PREF_WAIT_SECS, defWaitSecs);
         String svcStateText = null;
-        if (captureState == true) {
+        if (captureState) {
             File captureFileName = new File("/sdcard", "capture.csv");
             svcStateText = "Capture: " + captureFileName.getAbsolutePath();
             try {
@@ -212,7 +210,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
 
     /**
      * Receiving speech input
-     */
+     * */
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -296,11 +294,9 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
             if (mAccel > threshold) {
                 if ((fallDetected == true) && (mAccel > fallenThreshold)) {
                     sendSmsByManager();
-                    noMovement = false;
                 } else {
                     if ((fallDetected == false) && (mAccel > normalThreshold)) {
                         fallDetected = true;
-                        noMovement = true;
                         new Thread(new Runnable() {
                             public void run() {
                                 detectMovement();
@@ -354,11 +350,11 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
                     sb.append(address.getCountryName());
                 }
             } catch (IOException e) {
-                Toast.makeText(getApplicationContext(), "Cant connect to Geocoder",
+                Toast.makeText(getApplicationContext(), "Impossible to connect to Geocoder",
                         Toast.LENGTH_LONG).show();
                 e.printStackTrace();
             }
-            showAlert("GeoCode", myGeocodeLocation);
+
             String helpMessage = com.falldetect2015.android.fallassistant.R.string.fall_message + " http://maps.google.com/maps?q=" + URLEncoder.encode(myGeocodeLocation, "utf-8");
             SmsManager smsManager = SmsManager.getDefault();
             speech();
@@ -371,12 +367,13 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
             Toast.makeText(getApplicationContext(), "Your contacts have been notified",
                     Toast.LENGTH_LONG).show();
         } catch (Exception ex) {
-            showAlert("GeoCode", myGeocodeLocation);
             Toast.makeText(getApplicationContext(), "Your sms has failed...",
                     Toast.LENGTH_LONG).show();
             ex.printStackTrace();
+
             mlocManager.removeUpdates(mLocationListener);
         }
+
         mlocManager.removeUpdates(mLocationListener);
     }
 
@@ -390,7 +387,6 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
                 if (noMovement == false) {
                     Toast.makeText(getApplicationContext(), "Welcome Back",
                             Toast.LENGTH_LONG).show();
-                    cancel();
                 }
             }
 
@@ -401,40 +397,8 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
                     sendSmsByManager();
                 }
             }
+
         }.start();
-    }
-
-    public void showAlert(String title, String alertMessage) {
-        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(
-                this);
-
-        // set title
-        alertDialogBuilder.setTitle("Fall Alert");
-
-        // set dialog message
-        alertDialogBuilder
-                .setMessage(alertMessage + "\nClick yes to exit!")
-                .setCancelable(false)
-                .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int id) {
-                        // if this button is clicked, close
-                        // current activity
-                        MainActivity.this.finish();
-                    }
-                })
-                .setNegativeButton("No", new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int id) {
-                        // if this button is clicked, just close
-                        // the dialog box and do nothing
-                        dialog.cancel();
-                    }
-                });
-
-        // create alert dialog
-        AlertDialog alertDialog = alertDialogBuilder.create();
-
-        // show it
-        alertDialog.show();
     }
 
     private void speech() {
@@ -459,7 +423,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         }
     }
 
-    public void help() {
+    public void help () {
         speech();
         promptSpeechInput();
     }
