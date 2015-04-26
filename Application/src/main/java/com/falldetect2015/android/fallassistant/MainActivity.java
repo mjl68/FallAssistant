@@ -410,9 +410,9 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
             Toast.makeText(getApplicationContext(), "Your sms has failed...",
                     Toast.LENGTH_LONG).show();
             ex.printStackTrace();
-            mlocManager.removeUpdates(mLocationListener);
+           // mlocManager.removeUpdates(mLocationListener);
         }
-        mlocManager.removeUpdates(mLocationListener);
+       // mlocManager.removeUpdates(mLocationListener);
     }
 
     public void showAlert(String title, String alertMessage) {
