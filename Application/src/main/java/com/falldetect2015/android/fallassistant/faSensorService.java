@@ -45,6 +45,7 @@ public class faSensorService extends Service implements SensorEventListener {
         super.onStartCommand(intent, flags, startId);
         if (MainActivity.DEBUG)
             Log.d(LOG_TAG, "onStartCommand");
+        MainActivity.svcRunning = false;
         stopSensorService();        // just in case the activity-level service management fails
         sensorName = intent.getStringExtra("sensorname");
         if (MainActivity.DEBUG)
@@ -87,7 +88,7 @@ public class faSensorService extends Service implements SensorEventListener {
     }   // cannot bind
 
     private void stopSensorService() {
-        if (!MainActivity.svcRunning)
+        if ((MainActivity.svcRunning != null) && (MainActivity.svcRunning != true))
             return;
         if (generateUserActivityThread != null) {
             generateUserActivityThread.stopThread();

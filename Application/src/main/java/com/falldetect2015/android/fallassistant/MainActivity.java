@@ -242,7 +242,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         Sensor sensor = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         String sensorName = sensor.getName();
         Intent i = new Intent();
-        i.setClassName("com.falldetect2015.android.fallassistant", ".faSensorService");
+        i.setClassName("com.falldetect2015.android.fallassistant", "com.falldetect2015.android.fallassistant.faSensorService");
         i.putExtra("sensorname", sensorName);
         startService(i);
         svcRunning = true;
@@ -251,7 +251,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     private void stopSensorService() {
         if (svcRunning) {
             Intent i = new Intent();
-            i.setClassName("com.falldetect2015.android.fallassistant", ".faSensorService");
+            i.setClassName("com.falldetect2015.android.fallassistant", "com.falldetect2015.android.fallassistant.faSensorService");
             stopService(i);
         }
         svcRunning = false;
