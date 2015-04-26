@@ -237,7 +237,7 @@ public class NavigationDrawerActivity extends Activity implements OptionAdapter.
         public View onCreateView(LayoutInflater inflater, ViewGroup container,
                                  Bundle savedInstanceState) {
             View rootView = inflater.inflate(com.falldetect2015.android.fallassistant.R.layout.options, container, false);
-            int i = getArguments().getInt(ARG_OPTIONS_NUMBER);
+/*            int i = getArguments().getInt(ARG_OPTIONS_NUMBER);
             String optionString = getResources().getStringArray(com.falldetect2015.android.fallassistant.R.array.options_array)[i];
 
             int imageId = getResources().getIdentifier(optionString.toLowerCase(Locale.getDefault()),
@@ -245,7 +245,7 @@ public class NavigationDrawerActivity extends Activity implements OptionAdapter.
             ImageView iv = ((ImageView) rootView.findViewById(com.falldetect2015.android.fallassistant.R.id.image));
             iv.setImageResource(imageId);
 
-            getActivity().setTitle(optionString);
+            getActivity().setTitle(optionString);*/
             return rootView;
         }
     }
