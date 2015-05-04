@@ -97,7 +97,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         super.onCreate(savedInstanceState);
         setContentView(com.falldetect2015.android.fallassistant.R.layout.activity_main);
         mSamplesSwitch = false;
-        engine = new TextToSpeech(this, this);
+        engine = new TextToSpeech(this, this); //this is causing a crash for some reason
         stopSensorService();
         // Prepare list of samples in this dashboard.
         mSamples = new Sample[]{
@@ -446,7 +446,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         // set dialog message
         alertDialogBuilder
                 .setMessage(alertMessage)
-                .setCancelable(false)
+                .setCancelable(true)
                 .setPositiveButton("Yes I need help", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) {
                         // if this button is clicked, close
