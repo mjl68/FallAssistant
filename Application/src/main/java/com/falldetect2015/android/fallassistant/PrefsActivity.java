@@ -33,7 +33,6 @@ public class PrefsActivity extends Activity implements View.OnClickListener {
         titleTV = (TextView) findViewById(R.id.settingsTV);
         titleTV.setText(getString(R.string.options_message));
         titleTV.invalidate();
-        //sensorMax.setMax(40);
         sensorMax.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
 
             @Override
