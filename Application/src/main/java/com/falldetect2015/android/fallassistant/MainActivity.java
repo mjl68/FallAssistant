@@ -30,6 +30,8 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.location.Location;
 import android.location.LocationListener;
@@ -55,10 +57,11 @@ import com.squareup.otto.ThreadEnforcer;
 
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Locale;
 
 
-public class MainActivity extends Activity implements AdapterView.OnItemClickListener, TextToSpeech.OnInitListener {
+public class MainActivity extends Activity implements AdapterView.OnItemClickListener, TextToSpeech.OnInitListener, SensorEventListener {
     public static final boolean DEBUG = true;
     public static final String PREF_FILE = "myPrefs";
     public static final String LOG_TAG = "FallAssistant.";
@@ -69,8 +72,11 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     private static final String PREF_SAMPLING_SPEED = "samplingSpeed";
     private static final String PREF_WAIT_SECS = "waitSeconds";
     private static final String SERVICESTARTED_KEY = "serviceStarted";
+    private static final long UPDATE_INTERVAL = 5000;
     public static String phoneNum = "5126269115";
     public static String helpMsg;
+    public static float normalThreshold = 10,
+            fallenThreshold = 5;
     public static Bus bus;
     public static SharedPreferences appPrefs;
     public static SharedPreferences.Editor ed;
@@ -90,6 +96,8 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     private SensorManager mSensorManager;
     private PrintWriter captureFile;
     private String captureStateText;
+    private float[] lastSensorValues = new float[3];
+    private float[] mGravity;
     private TextToSpeech tts;
     private double pitch = 1.0;
     private double speed = 1.0;
@@ -105,6 +113,9 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     private Boolean ttsReady = false;
     private Boolean noMovement = true;
     private Intent iSensorService = new Intent(this, faSensorService.class);
+    private Date serviceStartedTimeStamp;
+    private float mAccelLast, mAccel, mAccelCurrent, maxAccelSeen;
+    private Boolean fallDetected = false;
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -276,7 +287,15 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
             // use this to start and trigger a service
             // potentially add data to the intent
             //i.putExtra("KEY1", "Value to be used by the service");
-            startService(new Intent(this, faSensorService.class));
+            //startService(new Intent(this, faSensorService.class));
+            mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
+            mSensorManager.registerListener(this,
+                    mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER),
+                    SensorManager.SENSOR_DELAY_UI);
+            if (DEBUG) Log.d(LOG_TAG, "registerListener/faSensorService");
+            serviceStartedTimeStamp = new Date();
+            if (DEBUG) Log.d(LOG_TAG, "Sensor ServiceX: Started");
+            svcRunning = true;
             //Log.d(LOG_TAG+"MainActivity", "MainActivity: Start sensor service");
         } catch (Exception e) {
             // Receiver was probably already stopped in onPause()
@@ -288,16 +307,28 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     }
 
     private void stopSensorService() {
-        if (svcRunning) {
-            try {
-                bus.unregister(this);
-                stopService(new Intent(this, faSensorService.class));
-                Log.d(LOG_TAG + "MainActivity", "Stop sensor service");
-            } catch (Exception e) {
-                // Receiver was probably already stopped in onPause()
-            }
+        if ((svcRunning != null) && (svcRunning != true))
+            return;
+        Log.d(MainActivity.LOG_TAG, "faSensorService stopSensorService");
+        bus.unregister(this);
+
+        if (mSensorManager != null) {
+            if (DEBUG) Log.d(LOG_TAG, "unregisterListener/faSensorService");
+            mSensorManager.unregisterListener(this);
         }
+
         svcRunning = false;
+        Date serviceStoppedTimeStamp = new Date();
+        long secondsEllapsed =
+                (serviceStoppedTimeStamp.getTime() -
+                        serviceStartedTimeStamp.getTime()) / 1000L;
+        bus.post("Sensor ServiceX: Stopped");
+        Log.d(LOG_TAG, "Service ServiceX: " +
+                serviceStartedTimeStamp.toString() +
+                "; Service stopped: " +
+                serviceStoppedTimeStamp.toString() +
+                " (" + secondsEllapsed + " seconds) " +
+                "; samples collected: ");
         // ed = appPrefs.edit();
         // ed.putBoolean( PREF_SERVICE_STATE, svcRunning );
     }
@@ -308,37 +339,48 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     }
 
     // SensorEventListener
-    public void onAccuracyChanged(Sensor sensor, int accuracy) {
+    public void onSensorChanged(SensorEvent sensorEvent) {
+        Log.d(LOG_TAG, "Sensor ServiceX: onSensorChanged");
+        if (sensorEvent.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
+            double threshold = (fallDetected == true) ? fallenThreshold : normalThreshold;
+            mGravity = sensorEvent.values.clone();
+            // fall / cant get up detection
+            /*lastSensorValues[0] = mTestData.x;
+            mTestData.y = mGravity[1];
+            lastSensorValues[1] = mTestData.y;
+            mTestData.z = mGravity[2];
+            lastSensorValues[2] = mTestData.z;*/
+            mAccelLast = mAccelCurrent;
+            mAccelCurrent = (float) Math.sqrt(mGravity[0] * mGravity[0] + mGravity[1] * mGravity[1] + mGravity[2] * mGravity[2]);
+            float delta = mAccelCurrent - mAccelLast;
+            mAccel = Math.abs(mAccel * 0.9f) + delta;
+            if (mAccel > maxAccelSeen) {
+                maxAccelSeen = mAccel;
+                //string message = "Increased";
+            }
+
+
+            if (DEBUG)
+                Log.d(LOG_TAG, "Sensor ServiceX: onChange mAccel=" + mAccel + " maxAccelSeen=" + maxAccelSeen + " threshold=" + threshold);
+            if (mAccel > threshold) {
+                maxAccelSeen = 0;
+                if ((fallDetected == true) && (mAccel > fallenThreshold)) {
+                    stopSensorService();
+                    help();
+                } else {
+                    if ((fallDetected == false) && (mAccel > normalThreshold)) {
+                        fallDetected = true;
+                        help();
+                    }
+                }
+            }
+            //bus.post(mTestData);
+        }
     }
 
     @Override
-    public void onItemClick(AdapterView<?> container, View view, int position, long id) {
-        Boolean serviceState = svcRunning;
-        int x = 0;
-        //Boolean pos = (position == 2);
-        if (position == 1) {
-            startActivity(mSamples[position].intent);
-        } else {
-            if (position == 2) {
-                // position == 2, sending SMS
-                help();
-            }
-            if (position == 0) {
-                if (svcRunning == false) {
-                    mSamples[0].titleResId = com.falldetect2015.android.fallassistant.R.string.nav_1a_titl;
-                    mSamples[0].descriptionResId = com.falldetect2015.android.fallassistant.R.string.nav_1a_desc;
-                    startSensorService();
-                    //svcRunning = true;
-                    mGridView.invalidateViews();
-                } else {
-                    mSamples[0].titleResId = com.falldetect2015.android.fallassistant.R.string.nav_1_titl;
-                    mSamples[0].descriptionResId = com.falldetect2015.android.fallassistant.R.string.nav_1_desc;
-                    stopSensorService();
-                    //svcRunning = false;
-                    mGridView.invalidateViews();
-                }
-            }
-        }
+    public void onAccuracyChanged(Sensor sensor, int accuracy) {
+
     }
 
     public void help() {
@@ -494,6 +536,36 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
             //mlocManager.removeUpdates(mLocationListener);
         }
         //mlocManager.removeUpdates(mLocationListener);
+    }
+
+    @Override
+    public void onItemClick(AdapterView<?> container, View view, int position, long id) {
+        Boolean serviceState = svcRunning;
+        int x = 0;
+        //Boolean pos = (position == 2);
+        if (position == 1) {
+            startActivity(mSamples[position].intent);
+        } else {
+            if (position == 2) {
+                // position == 2, sending SMS
+                help();
+            }
+            if (position == 0) {
+                if (svcRunning == false) {
+                    mSamples[0].titleResId = com.falldetect2015.android.fallassistant.R.string.nav_1a_titl;
+                    mSamples[0].descriptionResId = com.falldetect2015.android.fallassistant.R.string.nav_1a_desc;
+                    startSensorService();
+                    //svcRunning = true;
+                    mGridView.invalidateViews();
+                } else {
+                    mSamples[0].titleResId = com.falldetect2015.android.fallassistant.R.string.nav_1_titl;
+                    mSamples[0].descriptionResId = com.falldetect2015.android.fallassistant.R.string.nav_1_desc;
+                    stopSensorService();
+                    //svcRunning = false;
+                    mGridView.invalidateViews();
+                }
+            }
+        }
     }
 
     @Subscribe
