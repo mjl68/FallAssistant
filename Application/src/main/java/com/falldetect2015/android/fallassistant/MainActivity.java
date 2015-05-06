@@ -49,6 +49,10 @@ import android.widget.GridView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.squareup.otto.Bus;
+import com.squareup.otto.Subscribe;
+import com.squareup.otto.ThreadEnforcer;
+
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Locale;
@@ -56,18 +60,23 @@ import java.util.Locale;
 
 public class MainActivity extends Activity implements AdapterView.OnItemClickListener, TextToSpeech.OnInitListener {
     public static final boolean DEBUG = true;
-    private static final String PREF_FILE = "prefs";
+    public static final String PREF_FILE = "prefs";
+    public static final String LOG_TAG = "FallAssistant.";
+    public static final String PREF_CONTACT_NUMBER = "contactNumber";
+    public static final String PREF_HELP_MSG = "MESSAGE";
+    public static final String PREF_SENSOR_MAX = "SENSORMAX";
     private static final String PREF_SERVICE_STATE = "serviceState";
     private static final String PREF_SAMPLING_SPEED = "samplingSpeed";
     private static final String PREF_WAIT_SECS = "waitSeconds";
-    private final static int fields[] = {};
-    private static final String LOG_TAG = "FallAssistant.";
     private static final String SERVICESTARTED_KEY = "serviceStarted";
+    public static Bus bus;
     private static Boolean svcRunning = false;
-    private static String PREF_CONTACT_NUMBER = "5126269115";
     private final int REQ_CODE_SPEECH_INPUT = 100;
-    SharedPreferences appPrefs;
+    public SharedPreferences appPrefs;
+    public SharedPreferences.Editor ed;
+    public SharedPreferences mAppPrefs;
     private int rate = SensorManager.SENSOR_DELAY_UI;
+    private String contactNumber;
     private int defWaitSecs = 20;
     private int waitSeconds = defWaitSecs;
     private Sample[] mSamples;
@@ -79,7 +88,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     private SensorManager mSensorManager;
     private PrintWriter captureFile;
     private String captureStateText;
-    private TextToSpeech engine;
+    private TextToSpeech tts;
     private double pitch = 1.0;
     private double speed = 1.0;
     private LocationManager mlocManager = null;
@@ -91,22 +100,38 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     private String response = "";
     private Boolean needhelp = false;
     private Boolean exittimer = false;
-    private SharedPreferences.Editor ed;
+    private Boolean ttsReady = false;
+    private Boolean noMovement = true;
+    private Intent iSensorService = new Intent(this, faSensorService.class);
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        mAppPrefs = getSharedPreferences(PREF_FILE, MODE_PRIVATE);
+        contactNumber = "5126269115";// appPrefs.getString(PREF_CONTACT_NUMBER, "5126269115");
+        //ParseAnalytics.trackAppOpenedInBackground(getIntent());
+        // Enable Local Datastore.
+        //Parse.enableLocalDatastore(this);
+        //Parse.initialize(this, "kB6TzT245Sz7l5bt22kmwzKty59EQSjWaGj34x6z", "hpUrd43JtBb79XZCRlKrG1DMY58TYNJx81L5G05k");
+        //ParseObject faParseObject = new ParseObject("Fall Assistant");
+        //faParseObject.put("foo", "bar");
+        //faParseObject.saveInBackground();
         setContentView(com.falldetect2015.android.fallassistant.R.layout.activity_main);
         mSamplesSwitch = false;
-        engine = new TextToSpeech(this, this);
+        bus = new Bus(ThreadEnforcer.MAIN);
+        if (tts == null) {
+            tts = new TextToSpeech(this, this);
+        }
+        //startService(new Intent(this, myReceiver.class)); Log.d(LOG_TAG, "Started BR service");
         stopSensorService();
+        Log.d(LOG_TAG, "Started Fall Assistant");
         // Prepare list of samples in this dashboard.
         mSamples = new Sample[]{
                 new Sample(com.falldetect2015.android.fallassistant.R.string.nav_1_titl, com.falldetect2015.android.fallassistant.R.string.nav_1_desc,
-                        NavigationDrawerActivity.class),
+                        MainActivity.class),
                 new Sample(com.falldetect2015.android.fallassistant.R.string.nav_2_titl, com.falldetect2015.android.fallassistant.R.string.nav_2_desc,
-                        NavigationDrawerActivity.class),
+                        PrefsActivity.class),
                 new Sample(com.falldetect2015.android.fallassistant.R.string.nav_3_titl, com.falldetect2015.android.fallassistant.R.string.nav_3_desc,
-                        NavigationDrawerActivity.class),
+                        MainActivity.class),
         };
 
         // Prepare the GridView
@@ -114,45 +139,54 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         mGridView.setAdapter(new SampleAdapter());
         mGridView.setOnItemClickListener(this);
         //String sensorName = sensor.getName();
-        Intent i = getIntent();
-        if (i != null) {
+        //Intent i = getIntent();
+        /*if (i != null) {
             sensorName = i.getStringExtra("sensorname");
             if (DEBUG)
                 Log.d(LOG_TAG, "sensorName: " + sensorName);
-        }
+        }*/
+
         if (savedInstanceState != null) {
             svcRunning = false; // savedInstanceState.getBoolean( svcRunning, false );
             //sensorName = savedInstanceState.getString( SENSORNAME_KEY );
         }
-        appPrefs = getSharedPreferences(
-                PREF_FILE,
-                MODE_PRIVATE);
-        Boolean svcState = appPrefs.getBoolean(PREF_SERVICE_STATE, false);
-        waitSeconds = appPrefs.getInt(PREF_WAIT_SECS, defWaitSecs);
+        Boolean svcState = false;  //appPrefs.getBoolean(PREF_SERVICE_STATE, false);
+        waitSeconds = defWaitSecs; //appPrefs.getInt(PREF_WAIT_SECS, defWaitSecs);
         String svcStateText = null;
         if (captureState == true) {
             //File captureFileName = new File("/sdcard", "capture.csv");
             //svcStateText = "Capture: " + captureFileName.getAbsolutePath();
-           /* try {
-// if we are restarting (e.g. due to orientation change), we append to the log file instead of overwriting it
+        /* try {
+        // if we are restarting (e.g. due to orientation change), we append to the log file instead of overwriting it
                 //captureFile = new PrintWriter(new FileWriter(captureFileName, svcRunning));
             } catch (IOException ex) {
                 Log.e(LOG_TAG, ex.getMessage(), ex);
                 //captureStateText = "Capture: " + ex.getMessage();
             }*/
-        } else
-            //captureStateText = "Capture: OFF";
-        rate = appPrefs.getInt(
-                PREF_SAMPLING_SPEED,
-                SensorManager.SENSOR_DELAY_UI);
+        } else { //captureStateText = "Capture: OFF";
+            rate = SensorManager.SENSOR_DELAY_UI;//appPrefs.getInt(PREF_SAMPLING_SPEED, SensorManager.SENSOR_DELAY_UI);
+        }
     }
+    /*
+    @Subscribe
+    public void onTestEvent(TestData event) {
+        Toast.makeText(this, event.message, Toast.LENGTH_SHORT).show();
+    }*/
 
     protected void onStart() {
         super.onStart();
-        if (DEBUG)
-            Log.d(LOG_TAG, "onStart");
-        if (svcRunning != null && svcRunning == true) {
-            startSensorService();
+        if (DEBUG) Log.d(LOG_TAG, "onStart");
+        try {
+            if (svcRunning != null && svcRunning == true) {
+                if (DEBUG) Log.d(LOG_TAG, "onStart: svcRunning");
+                startSensorService();
+            }
+            if (tts != null) {
+                if (DEBUG) Log.d(LOG_TAG, "onStart: ttsengine new");
+                if (tts == null) tts = new TextToSpeech(this, this);
+            }
+        } catch (Exception e) {
+            // Receiver was probably already stopped in onPause()
         }
     }
 
@@ -161,18 +195,13 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         if (DEBUG) {
             Log.d(LOG_TAG, "onResume");
         }
-        if (svcRunning == true) {
-            reStartService();
-        }
-        if (engine != null) {
-            engine = new TextToSpeech(this, this);
-        }
+        //if (svcRunning == true) { reStartService(); }
+        //registerReceiver(br, new IntentFilter(myReceiver.COUNTDOWN_BR)); Log.i(LOG_TAG, "Registered broacast receiver");
     }
 
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-        if (DEBUG)
-            Log.d(LOG_TAG, "onSaveInstanceState");
+        if (DEBUG) Log.d(LOG_TAG, "onSaveInstanceState");
         outState.putBoolean(SERVICESTARTED_KEY, svcRunning);
     }
 
@@ -184,6 +213,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         if (svcRunning == true) {
             ed = appPrefs.edit();
             ed.putBoolean(PREF_SERVICE_STATE, svcRunning);
+            ed.apply();
             reStartService();
         }
     }
@@ -197,10 +227,18 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
             ed.putBoolean(PREF_SERVICE_STATE, svcRunning);
             reStartService();
         }
-        if (engine != null) {
-            engine.stop();
-            engine.shutdown();
+        if (tts != null) {
+            Log.d(LOG_TAG, "onStart -- tts stop");
+            tts.stop();
+            tts.shutdown();
         }
+    }
+
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        stopSensorService();
     }
 
     /**
@@ -218,7 +256,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
                             .getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
                     //set string to text goes here ex. txtSpeechInput.setText(result.get(0));
                     response = result.get(0);
-                    if((response.contains("help"))||(response.contains("yes"))){
+                    if ((response.contains("help")) || (response.contains("yes"))) {
                         needhelp = true;
                     }
                 }
@@ -233,31 +271,38 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     }
 
     private void startSensorService() {
-        stopSensorService();
-        mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
-        Sensor sensor = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-        String sensorName = sensor.getName();
-        Intent i = new Intent();
-        i.setClassName("com.falldetect2015.android.fallassistant", "com.falldetect2015.android.fallassistant.faSensorService");
-        i.putExtra("sensorname", sensorName);
-        startService(i);
+        try {
+            if (tts == null) tts = new TextToSpeech(this, this);
+            tts.setLanguage(Locale.getDefault());
+            bus.register(this);
+            stopSensorService();
+            // use this to start and trigger a service
+            // potentially add data to the intent
+            //i.putExtra("KEY1", "Value to be used by the service");
+            startService(iSensorService);
+            Log.d(LOG_TAG, "Start sensor service");
+        } catch (Exception e) {
+            // Receiver was probably already stopped in onPause()
+        }
         svcRunning = true;
-        ed = appPrefs.edit();
-        ed.putBoolean(PREF_SERVICE_STATE, svcRunning);
+        // ed = appPrefs.edit();
+        // ed.putBoolean(PREF_SERVICE_STATE, svcRunning);
     }
 
     private void stopSensorService() {
         if (svcRunning) {
-            Intent i = new Intent();
-            i.setClassName("com.falldetect2015.android.fallassistant", "com.falldetect2015.android.fallassistant.faSensorService");
-            stopService(i);
+            try {
+                bus.unregister(this);
+                stopService(iSensorService);
+                Log.d(LOG_TAG, "Stop sensor service");
+            } catch (Exception e) {
+                // Receiver was probably already stopped in onPause()
+            }
         }
         svcRunning = false;
-        //ed = appPrefs.edit();
-        //ed.putBoolean( PREF_SERVICE_STATE, svcRunning );
+        // ed = appPrefs.edit();
+        // ed.putBoolean( PREF_SERVICE_STATE, svcRunning );
     }
-
-
 
     // SensorEventListener
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
@@ -267,7 +312,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     public void onItemClick(AdapterView<?> container, View view, int position, long id) {
         Boolean serviceState = svcRunning;
         int x = 0;
-        Boolean pos = position == 2;
+        //Boolean pos = (position == 2);
         if (position == 1) {
             startActivity(mSamples[position].intent);
         } else {
@@ -299,7 +344,10 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         new CountDownTimer(waitSeconds, 1000) {
             @Override
             public void onTick(long millisUntilFinished) {
-
+                // Display Timer Secs Left
+                Toast.makeText(getApplicationContext(),
+                        Long.toString(millisUntilFinished).concat(" seconds left on response timer"),
+                        Toast.LENGTH_SHORT).show();
             }
 
             @Override
@@ -310,7 +358,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
                     sendSmsByManager();
                 } else {
                     exittimer = false;
-                    new CountDownTimer(60000, 1000) {
+                    new CountDownTimer(20000, 1000) {
 
                         @Override
                         public void onTick(long millisUntilFinished) {
@@ -334,13 +382,43 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
                     }.start();
                 }
             }
-
         }.start();
-
+        noMovement = false;
     }
 
     private void speech() {
-        engine.speak("Do you Need help?", TextToSpeech.QUEUE_FLUSH, null);
+        tts.speak("Do you Need help?", TextToSpeech.QUEUE_FLUSH, null);
+    }
+
+    public void helpalert(String title, String alertMessage) {
+        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(
+                this);
+        // set title
+        alertDialogBuilder.setTitle("Fall Alert " + title);
+        // set dialog message
+        alertDialogBuilder
+                .setMessage(alertMessage)
+                .setCancelable(false)
+                .setPositiveButton("Yes I need help", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        // if this button is clicked, close
+                        // current activity
+                        needhelp = true;
+                    }
+                })
+                .setNegativeButton("No I don't need help", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        // if this button is clicked, close
+                        // current activity
+                        exittimer = true;
+                    }
+                });
+
+        // create alert dialog
+        AlertDialog alertDialog = alertDialogBuilder.create();
+
+        // show it
+        alertDialog.show();
     }
 
     private void promptSpeechInput() {
@@ -398,7 +476,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
             SmsManager smsManager = SmsManager.getDefault();
             //speech();
             //promptSpeechInput();
-            smsManager.sendTextMessage(PREF_CONTACT_NUMBER,
+            smsManager.sendTextMessage(contactNumber,
                     null,
                     helpMessage,
                     null,
@@ -407,12 +485,54 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
                     Toast.LENGTH_LONG).show();
         } catch (Exception ex) {
             // showAlert("GeoCode", myGeocodeLocation);
-            Toast.makeText(getApplicationContext(), "Your sms has failed...",
+            Toast.makeText(getApplicationContext(), "SMS has failed...",
                     Toast.LENGTH_LONG).show();
             ex.printStackTrace();
-           // mlocManager.removeUpdates(mLocationListener);
+            //mlocManager.removeUpdates(mLocationListener);
         }
-       // mlocManager.removeUpdates(mLocationListener);
+        //mlocManager.removeUpdates(mLocationListener);
+    }
+
+    @Subscribe
+    public void getMessage(String msg) {
+        if (DEBUG) {
+            Toast.makeText(this, msg, Toast.LENGTH_LONG).show();
+        }
+        if (msg.equalsIgnoreCase("start timer")) {
+            startTimer();
+        }
+    }
+
+    public void startTimer() {
+        new CountDownTimer(waitSeconds, 1000) {
+            @Override
+            public void onTick(long millisUntilFinished) {
+                // Display Timer Secs Left
+                Toast.makeText(getApplicationContext(),
+                        Long.toString(millisUntilFinished).concat(" seconds left on movement timer"),
+                        Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onFinish() {
+                if (noMovement) {
+                    help();
+                } else {
+                    noMovement = true;
+                    startSensorService();  // Re-enable service
+                }
+            }
+        }.start();
+    }
+
+    @Subscribe
+    public void getMessage(TestData msg) {
+        if (DEBUG) {
+            Toast.makeText(this, msg.message, Toast.LENGTH_LONG).show();
+        }
+        if (msg.message.equalsIgnoreCase("send for help")) {
+            help();
+        }
     }
 
     public void showAlert(String title, String alertMessage) {
@@ -438,36 +558,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         // show it
         alertDialog.show();
     }
-    public void helpalert(String title, String alertMessage) {
-        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(
-                this);
-        // set title
-        alertDialogBuilder.setTitle("Fall Alert " + title);
-        // set dialog message
-        alertDialogBuilder
-                .setMessage(alertMessage)
-                .setCancelable(false)
-                .setPositiveButton("Yes I need help", new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int id) {
-                        // if this button is clicked, close
-                        // current activity
-                        needhelp = true;
-                    }
-                })
-                .setNegativeButton("No I don't need help", new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int id) {
-                    // if this button is clicked, close
-                    // current activity
-                     exittimer = true;
-                    }
-                 });
 
-        // create alert dialog
-        AlertDialog alertDialog = alertDialogBuilder.create();
-
-        // show it
-        alertDialog.show();
-    }
     public void showToast(CharSequence message) {
         int duration = Toast.LENGTH_SHORT;
 
@@ -477,17 +568,15 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
 
     @Override
     public void onInit(int status) {
-        Log.d("Speech", "OnInit - Status [" + status + "]");
+        //Log.d("Speech", "OnInit - Status [" + status + "]");
 
         if (status == TextToSpeech.SUCCESS) {
-            Log.d("Speech", "Success!");
-            engine.setLanguage(Locale.US);
+            if (DEBUG) Log.d("Speech", "Success!");
+            tts.setLanguage(Locale.US);
         }
     }
 
-    public class myLocationListener implements LocationListener
-
-    {
+    public class myLocationListener implements LocationListener {
         @Override
         public void onLocationChanged(Location loc) {
             currentLocation = loc;
@@ -591,4 +680,16 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
             this.sampling = sampling;
         }
     }
+
+    public class TestData {
+        public String message;
+        public float x,
+                y,
+                z,
+                delta,
+                maxAccelSeen;
+        public long timeStamp;
+    }
 }
+
+

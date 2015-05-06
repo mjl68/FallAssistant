@@ -30,12 +30,17 @@
     <string name="app_not_available">Sorry, there\'s no web browser available</string>
     <string name="fall_message">I have fallen and need help, sent by fall assistant app</string>
     <string name="new_message_notification_title_template">Fall Assistant: %1$s</string>
-
+    <string name="options_message">Fall Assistant configuration options</string>
     <!-- TODO: remove this placeholder text -->
-    <string name="notification_text_service_up">The service is %1$s running.</string>
-
+    <string name="notification_text_service_up">The service is %1$s running</string>
     <string name="action_share">Share</string>
     <string name="action_reply">Reply</string>
     <string name="speech_prompt">Say something&#8230;</string>
     <string name="speech_not_supported">Sorry! Your device doesn\'t support speech input</string>
+    <string name="saveButtonAcc">Save Button Clicked</string>
+    <string name="resetButtonAcc">Settings reset to default</string>
+    <string name="title_activity_prefs">PrefsActivity</string>
+
+    <string name="settings_desc">Fall Assistant application settings.\nTouch \"Back\" to return to the main screen</string>
+    <string name="action_settings">Settings</string>
 </resources>

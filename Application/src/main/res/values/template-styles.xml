@@ -18,14 +18,14 @@
 
     <!-- Activity themes -->
 
-    <style name="Theme.Base" parent="android:Theme.Holo.Light" />
+    <style name="Theme.Base" parent="android:Theme.Holo.Light"/>
 
-    <style name="Theme.Sample" parent="Theme.Base" />
+    <style name="Theme.Sample" parent="Theme.Base"/>
 
-    <style name="AppTheme" parent="Theme.Sample" />
+    <style name="AppTheme" parent="Theme.Sample"/>
     <!-- Widget styling -->
 
-    <style name="Widget" />
+    <style name="Widget"/>
 
     <style name="Widget.SampleContentContainer">
         <item name="android:paddingTop">@dimen/vertical_page_margin</item>
@@ -34,7 +34,7 @@
         <item name="android:paddingRight">@dimen/horizontal_page_margin</item>
     </style>
 
-<style name="Widget.SampleMessage">
+    <style name="Widget.SampleMessage">
         <item name="android:textAppearance">?android:textAppearanceMedium</item>
         <item name="android:lineSpacingMultiplier">1</item>
         <item name="android:textColor">@color/black_54</item>
@@ -47,6 +47,7 @@
         <item name="android:drawSelectorOnTop">true</item>
         <item name="android:horizontalSpacing">0dp</item>
         <item name="android:verticalSpacing">0dp</item>
+        <item name="android:background">@color/black_87</item>
     </style>
 
     <style name="Widget.SampleDashboard.Card" parent="Widget">

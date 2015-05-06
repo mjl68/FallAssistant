@@ -15,27 +15,30 @@
   -->
 
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical">
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:orientation="vertical">
 
-    <TextView style="@style/Widget.SampleMessage"
+    <TextView
+        style="@style/Widget.SampleMessage"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginBottom="@dimen/vertical_page_margin"
         android:layout_marginLeft="@dimen/horizontal_page_margin"
         android:layout_marginRight="@dimen/horizontal_page_margin"
         android:layout_marginTop="@dimen/vertical_page_margin"
-        android:layout_marginBottom="@dimen/vertical_page_margin"
-        android:text="@string/intro_message" />
+        android:text="@string/intro_message"/>
 
-    <GridView android:id="@android:id/list"
+    <GridView
+        android:id="@android:id/list"
         style="@style/Widget.SampleDashboard.Grid"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
+        android:paddingBottom="@dimen/vertical_page_margin"
         android:paddingLeft="@dimen/horizontal_page_margin"
         android:paddingRight="@dimen/horizontal_page_margin"
-        android:paddingBottom="@dimen/vertical_page_margin"
-        android:scrollbarStyle="outsideOverlay" />
+        android:scrollbarStyle="outsideOverlay"
+        />
 
 </LinearLayout>

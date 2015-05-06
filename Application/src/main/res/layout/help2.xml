@@ -1,28 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="horizontal" android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:weightSum="1">
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:orientation="horizontal"
+              android:weightSum="1">
 
     <Button
-        android:layout_width="119dp"
-        android:layout_height="293dp"
-        android:text="No"
         android:id="@+id/button"
-        android:layout_gravity="center_vertical" />
+        android:layout_width="119dp"
+        android:layout_height="275dp"
+        android:layout_gravity="center_vertical"
+        android:text="No"/>
 
     <TextView
+        android:id="@+id/textView"
         android:layout_width="148dp"
         android:layout_height="115dp"
-        android:textAppearance="?android:attr/textAppearanceLarge"
         android:text="Do You Need Help?"
-        android:id="@+id/textView" />
+        android:textAppearance="?android:attr/textAppearanceLarge"/>
 
     <Button
+        android:id="@+id/button2"
         android:layout_width="match_parent"
         android:layout_height="293dp"
-        android:text="Yes"
-        android:id="@+id/button2"
-        android:layout_gravity="center_vertical" />
+        android:layout_gravity="center_vertical"
+        android:text="Yes"/>
 
 </LinearLayout>
