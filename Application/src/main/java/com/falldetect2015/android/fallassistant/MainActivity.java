@@ -60,7 +60,7 @@ import java.util.Locale;
 
 public class MainActivity extends Activity implements AdapterView.OnItemClickListener, TextToSpeech.OnInitListener {
     public static final boolean DEBUG = true;
-    public static final String PREF_FILE = "prefs";
+    public static final String PREF_FILE = "myPrefs";
     public static final String LOG_TAG = "FallAssistant.";
     public static final String PREF_CONTACT_NUMBER = "contactNumber";
     public static final String PREF_HELP_MSG = "MESSAGE";
@@ -69,12 +69,14 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     private static final String PREF_SAMPLING_SPEED = "samplingSpeed";
     private static final String PREF_WAIT_SECS = "waitSeconds";
     private static final String SERVICESTARTED_KEY = "serviceStarted";
+    public static String phoneNum = "5126269115";
+    public static String helpMsg;
     public static Bus bus;
+    public static SharedPreferences appPrefs;
+    public static SharedPreferences.Editor ed;
+    public static SharedPreferences mAppPrefs;
     private static Boolean svcRunning = false;
     private final int REQ_CODE_SPEECH_INPUT = 100;
-    public SharedPreferences appPrefs;
-    public SharedPreferences.Editor ed;
-    public SharedPreferences mAppPrefs;
     private int rate = SensorManager.SENSOR_DELAY_UI;
     private String contactNumber;
     private int defWaitSecs = 20;
@@ -108,6 +110,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         super.onCreate(savedInstanceState);
         mAppPrefs = getSharedPreferences(PREF_FILE, MODE_PRIVATE);
         contactNumber = "5126269115";// appPrefs.getString(PREF_CONTACT_NUMBER, "5126269115");
+        helpMsg = getString(R.string.fall_message);
         //ParseAnalytics.trackAppOpenedInBackground(getIntent());
         // Enable Local Datastore.
         //Parse.enableLocalDatastore(this);
@@ -117,13 +120,12 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         //faParseObject.saveInBackground();
         setContentView(com.falldetect2015.android.fallassistant.R.layout.activity_main);
         mSamplesSwitch = false;
-        bus = new Bus(ThreadEnforcer.MAIN);
+        bus = new Bus(ThreadEnforcer.ANY);
         if (tts == null) {
             tts = new TextToSpeech(this, this);
         }
-        //startService(new Intent(this, myReceiver.class)); Log.d(LOG_TAG, "Started BR service");
         stopSensorService();
-        Log.d(LOG_TAG, "Started Fall Assistant");
+        Log.d(LOG_TAG, "onCreate Fall Assistant");
         // Prepare list of samples in this dashboard.
         mSamples = new Sample[]{
                 new Sample(com.falldetect2015.android.fallassistant.R.string.nav_1_titl, com.falldetect2015.android.fallassistant.R.string.nav_1_desc,
@@ -167,22 +169,17 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
             rate = SensorManager.SENSOR_DELAY_UI;//appPrefs.getInt(PREF_SAMPLING_SPEED, SensorManager.SENSOR_DELAY_UI);
         }
     }
-    /*
-    @Subscribe
-    public void onTestEvent(TestData event) {
-        Toast.makeText(this, event.message, Toast.LENGTH_SHORT).show();
-    }*/
 
     protected void onStart() {
         super.onStart();
-        if (DEBUG) Log.d(LOG_TAG, "onStart");
+        // if (DEBUG) Log.d(LOG_TAG, "onStart");
         try {
             if (svcRunning != null && svcRunning == true) {
-                if (DEBUG) Log.d(LOG_TAG, "onStart: svcRunning");
+                //if (DEBUG) Log.d(LOG_TAG, "onStart: svcRunning");
                 startSensorService();
             }
             if (tts != null) {
-                if (DEBUG) Log.d(LOG_TAG, "onStart: ttsengine new");
+                //if (DEBUG) Log.d(LOG_TAG, "onStart: ttsengine new");
                 if (tts == null) tts = new TextToSpeech(this, this);
             }
         } catch (Exception e) {
@@ -210,10 +207,10 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         if (DEBUG) {
             Log.d(LOG_TAG, "onPause");
         }
-        if (svcRunning == true) {
-            ed = appPrefs.edit();
-            ed.putBoolean(PREF_SERVICE_STATE, svcRunning);
-            ed.apply();
+        if ((svcRunning != null) && (svcRunning == true)) {
+//            ed = appPrefs.edit();
+            //ed.putBoolean(PREF_SERVICE_STATE, svcRunning);
+            //ed.apply();
             reStartService();
         }
     }
@@ -228,12 +225,11 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
             reStartService();
         }
         if (tts != null) {
-            Log.d(LOG_TAG, "onStart -- tts stop");
+            //Log.d(LOG_TAG, "onStart -- tts stop");
             tts.stop();
             tts.shutdown();
         }
     }
-
 
     @Override
     protected void onDestroy() {
@@ -274,15 +270,17 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         try {
             if (tts == null) tts = new TextToSpeech(this, this);
             tts.setLanguage(Locale.getDefault());
+            if (bus == null) bus = new Bus(ThreadEnforcer.ANY);
             bus.register(this);
             stopSensorService();
             // use this to start and trigger a service
             // potentially add data to the intent
             //i.putExtra("KEY1", "Value to be used by the service");
-            startService(iSensorService);
-            Log.d(LOG_TAG, "Start sensor service");
+            startService(new Intent(this, faSensorService.class));
+            //Log.d(LOG_TAG+"MainActivity", "MainActivity: Start sensor service");
         } catch (Exception e) {
             // Receiver was probably already stopped in onPause()
+            Log.d(LOG_TAG + "MainActivity.startSensorService", "Exception: Start sensor service " + e.getMessage());
         }
         svcRunning = true;
         // ed = appPrefs.edit();
@@ -293,8 +291,8 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         if (svcRunning) {
             try {
                 bus.unregister(this);
-                stopService(iSensorService);
-                Log.d(LOG_TAG, "Stop sensor service");
+                stopService(new Intent(this, faSensorService.class));
+                Log.d(LOG_TAG + "MainActivity", "Stop sensor service");
             } catch (Exception e) {
                 // Receiver was probably already stopped in onPause()
             }
@@ -302,6 +300,11 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         svcRunning = false;
         // ed = appPrefs.edit();
         // ed.putBoolean( PREF_SERVICE_STATE, svcRunning );
+    }
+
+    @Subscribe
+    public void onTestEvent(TestData event) {
+        Toast.makeText(this, event.message, Toast.LENGTH_SHORT).show();
     }
 
     // SensorEventListener
@@ -476,9 +479,9 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
             SmsManager smsManager = SmsManager.getDefault();
             //speech();
             //promptSpeechInput();
-            smsManager.sendTextMessage(contactNumber,
+            smsManager.sendTextMessage(phoneNum,
                     null,
-                    helpMessage,
+                    helpMsg,
                     null,
                     null);
             Toast.makeText(getApplicationContext(), "Your contact has been notified",

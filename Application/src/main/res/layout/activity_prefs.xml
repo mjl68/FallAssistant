@@ -68,14 +68,18 @@
 
     <SeekBar
         android:id="@+id/snsrMaxAcc"
-        android:layout_width="wrap_content"
+        android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentEnd="true"
         android:layout_alignParentStart="true"
         android:layout_below="@+id/textView5"
+        android:layout_margin="10dp"
         android:layout_marginTop="25dp"
         android:indeterminate="@bool/abc_config_closeDialogWhenTouchOutside"
-        android:max="20"/>
+        android:max="100"
+        android:progress="0"
+        android:progressDrawable="@drawable/progressbar"
+        android:secondaryProgress="0"/>
 
 
     <TextView

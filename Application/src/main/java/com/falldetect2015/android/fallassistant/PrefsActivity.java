@@ -11,6 +11,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 
 public class PrefsActivity extends Activity implements View.OnClickListener {
@@ -31,6 +32,7 @@ public class PrefsActivity extends Activity implements View.OnClickListener {
         sensorMax = (SeekBar) findViewById(R.id.snsrMaxAcc);
         titleTV = (TextView) findViewById(R.id.settingsTV);
         titleTV.setText(getString(R.string.options_message));
+        titleTV.invalidate();
         //sensorMax.setMax(40);
         sensorMax.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
 
@@ -58,7 +60,6 @@ public class PrefsActivity extends Activity implements View.OnClickListener {
         });
 
         sp = getSharedPreferences(MainActivity.PREF_FILE, MODE_PRIVATE);
-        ;
         edit = sp.edit();
 
         loadPrefs();
@@ -69,6 +70,8 @@ public class PrefsActivity extends Activity implements View.OnClickListener {
         oReset.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                MainActivity.phoneNum = "5126469115";
+                MainActivity.helpMsg = getString(R.string.fall_message);
                 loadPrefs();
             }
         });
@@ -81,17 +84,20 @@ public class PrefsActivity extends Activity implements View.OnClickListener {
 
         try {
             sp.getString(MainActivity.PREF_CONTACT_NUMBER, strVal);
-            if (strVal == null) strVal = "800-555-1212";
+            if (strVal == null) strVal = MainActivity.phoneNum;
             phone.setText(strVal);
             strVal = null;
             Log.d(MainActivity.LOG_TAG, "LoadPrefs loaded: " + strVal);
-            if (strVal == null) strVal = getString(R.string.fall_message);
+            if (strVal == null) strVal = MainActivity.helpMsg;
             sp.getString(MainActivity.PREF_HELP_MSG, strVal);
             hMsg.setText(strVal);
             Log.d(MainActivity.LOG_TAG, "LoadPrefs loaded: " + strVal);
             sp.getFloat(MainActivity.PREF_SENSOR_MAX, floatVal);
             sensorMax.setProgress(40 - Math.round((floatVal - 15) * 4));
             Log.d(MainActivity.LOG_TAG, "LoadPrefs loaded: " + floatVal + " set " + sensorMax.getProgress());
+            phone.invalidate();
+            hMsg.invalidate();
+            sensorMax.invalidate();
         } catch (Exception ex) {
             if (MainActivity.DEBUG)
                 Log.d(MainActivity.LOG_TAG, "LoadPrefs Error: " + ex.getMessage());
@@ -121,6 +127,7 @@ public class PrefsActivity extends Activity implements View.OnClickListener {
     }
 
     private void savePrefs(String key, float value) {
+
         edit.putFloat(key, value);
         edit.commit();
     }
@@ -128,15 +135,22 @@ public class PrefsActivity extends Activity implements View.OnClickListener {
 
     private void savePrefs(String key, String value) {
         Log.d(MainActivity.LOG_TAG, "SavePrefs loaded: " + key + ": " + value);
-        edit.putString(key, value);
+
+        edit.putString(key, value.trim());
         edit.commit();
+        String val = "";
+        sp.getString(MainActivity.PREF_CONTACT_NUMBER, val);
+        Toast.makeText(this, val, Toast.LENGTH_SHORT);
     }
 
 
     @Override
     public void onClick(View v) {
+        MainActivity.phoneNum = phone.getText().toString();
+        MainActivity.helpMsg = hMsg.getText().toString();
+        faSensorService.normalThreshold = new Float(Math.abs(15 + 0.4 * (sensorMax.getProgress() - 40)));
         savePrefs(MainActivity.PREF_CONTACT_NUMBER, phone.getText().toString());
         savePrefs(MainActivity.PREF_HELP_MSG, hMsg.getText().toString());
-        savePrefs(MainActivity.PREF_SENSOR_MAX, new Float(15 + 0.4 * (sensorMax.getProgress() - 40)));
+        savePrefs(MainActivity.PREF_SENSOR_MAX, faSensorService.normalThreshold);
     }
 }

@@ -29,6 +29,7 @@ public class faSensorService extends Service implements SensorEventListener {
     private static final String PREF_WAIT_SECS = "waitSeconds";
     //private Timer timer = new Timer();
     private static final long UPDATE_INTERVAL = 5000;
+    public static float normalThreshold = 10;
     public static Bus bus;
     private static MainActivity MAIN_ACTIVITY;
     private String sensorName;
@@ -43,7 +44,6 @@ public class faSensorService extends Service implements SensorEventListener {
     private Date serviceStartedTimeStamp;
     private boolean sensorServiceRunning = false;
     private int sensorServicePosition = 0;
-    private float normalThreshold = 10;
     private float fallenThreshold = 2;
     private Boolean fallDetected = false;
     private float[] lastSensorValues = new float[3];
@@ -65,16 +65,20 @@ public class faSensorService extends Service implements SensorEventListener {
         MAIN_ACTIVITY = activity;
     }
 
-    public int onStartCommand(Intent intent, int flags, int startId) {
-        super.onStartCommand(intent, flags, startId);
+    @Override
+    public void onCreate() {
+        bus = MainActivity.bus;
+        bus.register(this);
+        Log.d(MainActivity.LOG_TAG, "faSensorService onCreate");
         appPrefs = getSharedPreferences(PREF_FILE, MODE_PRIVATE);
         svcRunning = appPrefs.getBoolean(PREF_SERVICE_STATE, false);
         waitSeconds = appPrefs.getInt(PREF_WAIT_SECS, defWaitSecs);
+        Log.d(MainActivity.LOG_TAG, "faSensorService onStart");
         if (DEBUG)
             Log.d(LOG_TAG, "onStartCommand");
         svcRunning = false;
         stopSensorService();        // just in case the activity-level service management fails
-        sensorName = intent.getStringExtra("sensorname");
+        sensorName = "sensorname";
         if (DEBUG)
             Log.d(LOG_TAG, "sensorName: " + sensorName);
         rate = appPrefs.getInt(
@@ -91,11 +95,11 @@ public class faSensorService extends Service implements SensorEventListener {
         mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         startSensorService();
         if (DEBUG) Log.d(LOG_TAG, "onStartCommand ends");
-        return START_STICKY;
     }
 
     public void onDestroy() {
         super.onDestroy();
+        Log.d(MainActivity.LOG_TAG, "faSensorService onDestroy");
         if (DEBUG) {
             Log.d(LOG_TAG, "onDestroy");
         }
@@ -115,7 +119,7 @@ public class faSensorService extends Service implements SensorEventListener {
     private void stopSensorService() {
         if ((svcRunning != null) && (svcRunning != true))
             return;
-
+        Log.d(MainActivity.LOG_TAG, "faSensorService stopSensorService");
         bus.unregister(this);
 
         if (mSensorManager != null) {
@@ -141,6 +145,7 @@ public class faSensorService extends Service implements SensorEventListener {
     }
 
     private void startSensorService() {
+        Log.d(MainActivity.LOG_TAG, "faSensorService startSensorService");
         if ((svcRunning != null) && (svcRunning == true)) {
             return;
         }
@@ -165,6 +170,36 @@ public class faSensorService extends Service implements SensorEventListener {
         serviceInProgressWakeLock.acquire();
         if (DEBUG) Log.d(LOG_TAG, "Sensor ServiceX: Started");
         svcRunning = true;
+    }
+
+    public int onStart(Intent intent, int flags, int startId) {
+        super.onStart(intent, flags);
+        appPrefs = getSharedPreferences(PREF_FILE, MODE_PRIVATE);
+        svcRunning = appPrefs.getBoolean(PREF_SERVICE_STATE, false);
+        waitSeconds = appPrefs.getInt(PREF_WAIT_SECS, defWaitSecs);
+        Log.d(MainActivity.LOG_TAG, "faSensorService onStart");
+        if (DEBUG)
+            Log.d(LOG_TAG, "onStartCommand");
+        svcRunning = false;
+        stopSensorService();        // just in case the activity-level service management fails
+        sensorName = intent.getStringExtra("sensorname");
+        if (DEBUG)
+            Log.d(LOG_TAG, "sensorName: " + sensorName);
+        rate = appPrefs.getInt(
+                PREF_SAMPLING_SPEED,
+                SensorManager.SENSOR_DELAY_UI);
+        if (DEBUG)
+            Log.d(LOG_TAG, "rate: " + rate);
+
+        //screenOffBroadcastReceiver = new ScreenOffBroadcastReceiver();
+        //IntentFilter screenOffFilter = new IntentFilter();
+        //screenOffFilter.addAction(Intent.ACTION_SCREEN_OFF);
+        /*if (KEEPAWAKE_HACK)
+            registerReceiver(screenOffBroadcastReceiver, screenOffFilter);*/
+        mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
+        startSensorService();
+        if (DEBUG) Log.d(LOG_TAG, "onStartCommand ends");
+        return START_STICKY;
     }
 
     public void onSensorChanged(SensorEvent sensorEvent) {
