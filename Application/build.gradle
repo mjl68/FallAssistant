@@ -15,13 +15,17 @@ repositories {
 }
 
 dependencies {
-    compile 'com.android.support:support-v13:22.1.0'
-    compile 'com.android.support:appcompat-v7:22.1.0'
-    compile 'com.android.support:recyclerview-v7:22.1.0'
-    compile 'com.android.support:cardview-v7:22.1.0'
+    compile fileTree(dir: 'libs', include: 'Parse-*.jar')
+    compile fileTree(dir: 'libs', include: 'ParseCrashReporting-*.jar')
+    compile 'com.android.support:support-v13:22.1.1'
+    compile 'com.android.support:appcompat-v7:22.1.1'
+    compile 'com.android.support:recyclerview-v7:22.1.1'
+    compile 'com.android.support:cardview-v7:22.1.1'
     compile 'com.squareup.okio:okio:1.3.0'
-    compile 'de.greenrobot:eventbus:2.4.0'
-    compile 'com.android.support:support-v4:22.1.0'
+    compile 'com.squareup:otto:1.3.6'
+    compile 'com.android.support:support-v4:22.1.1'
+    compile 'com.parse.bolts:bolts-android:1.+'
+    compile 'com.github.navasmdc:MaterialDesign:1.+@aar'
 }
 
 // The sample build uses multiple directories to
