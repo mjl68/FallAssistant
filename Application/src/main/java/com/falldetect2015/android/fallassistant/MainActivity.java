@@ -110,6 +110,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     private String response = "";
     private Boolean needhelp = false;
     private Boolean exittimer = false;
+    private Boolean helpReq;
     private Boolean ttsReady = false;
     private Boolean noMovement = true;
     private Intent iSensorService = new Intent(this, faSensorService.class);
@@ -385,7 +386,13 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
 
     public void help() {
         speech();
-        helpalert("Are you ok?", "Are you ok? Do you need help?");
+        if (helpReq == null) helpReq = false;
+        if ((helpReq == false)) {
+            helpReq = true;
+            helpalert("Are you ok?", "Are you ok? Do you need help?");
+        }
+        helpReq = true;
+
         new CountDownTimer(waitSeconds, 1000) {
             @Override
             public void onTick(long millisUntilFinished) {
@@ -484,6 +491,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
 
     public void sendSmsByManager() {
         try {
+            helpReq = false;
             // Get the default instance of the SmsManager
             /*if (mlocManager == null) {
                 mlocManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
